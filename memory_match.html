@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Trò Chơi Lật Thẻ Trí Nhớ - Memory Match</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .perspective-1000 {
+        perspective: 1000px;
+      }
+      .transform-style-3d {
+        transform-style: preserve-3d;
+      }
+      .backface-hidden {
+        backface-visibility: hidden;
+      }
+      .rotate-y-180 {
+        transform: rotateY(180deg);
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(0.6);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .animate-pop {
+        animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-900 text-white h-screen flex flex-col justify-between p-3 select-none overflow-hidden relative"
+  >
+    <!-- HEADER / THÔNG TIN TRÒ CHƠI -->
+    <div class="w-full max-w-md mx-auto flex-shrink-0">
+      <!-- BẢNG ĐIỂM, THỜI GIAN ĐẾM NGƯỢC & CẶP ĐÃ TÌM -->
+      <div
+        class="grid grid-cols-3 gap-2 bg-gray-800 p-2.5 rounded-2xl shadow-lg mb-2 text-center"
+      >
+        <div>
+          <span class="text-gray-400 text-[10px] block">THỜI GIAN</span>
+          <span
+            id="countdown-display"
+            class="text-lg font-mono text-red-400 font-bold"
+            >--</span
+          >
+        </div>
+        <div>
+          <span class="text-gray-400 text-[10px] block">ĐÃ TÌM ĐƯỢC</span>
+          <span
+            id="matched-display"
+            class="text-xl font-mono text-green-400 font-black"
+            >0 / 0</span
+          >
+        </div>
+        <div>
+          <span class="text-gray-400 text-[10px] block">LƯỢT LẬT SAI</span>
+          <span
+            id="miss-display"
+            class="text-lg font-mono text-yellow-400 font-bold"
+            >0</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- KHUNG CHƠI GAME CHÍNH (LƯỚI THẺ BÀI) -->
+    <div
+      class="w-full max-w-md mx-auto flex-1 flex items-center justify-center relative overflow-hidden bg-gray-950 rounded-3xl border border-gray-800 p-3 my-1"
+    >
+      <div
+        id="game-container"
+        class="w-full h-full flex items-center justify-center"
+      >
+        <div class="text-center text-gray-400 text-sm font-medium px-4">
+          Cài đặt số cặp và thời gian bên dưới, sau đó bấm
+          <span class="text-green-400 font-bold">"Bắt Đầu"</span> để lật thẻ!
+        </div>
+      </div>
+    </div>
+
+    <!-- MÀN HÌNH KẾT THÚC (THẮNG / THUA) -->
+    <div
+      id="gameover-modal"
+      class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden"
+    >
+      <div
+        class="bg-gray-800 border border-gray-700 w-full max-w-xs p-6 rounded-3xl text-center shadow-2xl animate-pop"
+      >
+        <div id="modal-icon" class="text-5xl mb-3">🎉</div>
+        <h2 id="modal-title" class="text-2xl font-black text-yellow-400 mb-1">
+          CHIẾN THẮNG!
+        </h2>
+        <p id="modal-desc" class="text-gray-300 text-xs mb-4">
+          M đã tìm khớp toàn bộ các cặp emoji.
+        </p>
+
+        <div class="bg-gray-900 p-4 rounded-2xl mb-5 space-y-2">
+          <div>
+            <span class="text-gray-400 text-xs">Thời gian còn lại:</span>
+            <div id="final-time" class="text-2xl font-black text-green-400">
+              0s
+            </div>
+          </div>
+          <div>
+            <span class="text-gray-400 text-xs">Số lượt lật sai:</span>
+            <div id="final-miss" class="text-lg font-bold text-yellow-400">
+              0
+            </div>
+          </div>
+        </div>
+
+        <button
+          onclick="startGame()"
+          class="w-full bg-gradient-to-r from-purple-600 to-pink-600 active:scale-95 transition-all py-3 rounded-xl font-bold text-base text-white shadow-lg"
+        >
+          Chơi Ván Mới
+        </button>
+      </div>
+    </div>
+
+    <!-- FOOTER / CẤU HÌNH (SỐ CẶP N & THỜI GIAN GIÂY) -->
+    <div
+      class="w-full max-w-md mx-auto flex items-center justify-between gap-1.5 text-gray-500 text-[11px] flex-shrink-0 bg-gray-800 p-2.5 rounded-2xl"
+    >
+      <div class="flex items-center gap-1">
+        <span>Cặp N:</span>
+        <input
+          type="number"
+          id="pairs-input"
+          min="4"
+          max="18"
+          value="10"
+          class="w-11 bg-gray-700 text-white text-center px-1 py-1 rounded-lg text-xs font-bold focus:outline-none"
+        />
+      </div>
+      <div class="flex items-center gap-1">
+        <span>Giây:</span>
+        <input
+          type="number"
+          id="time-input"
+          min="10"
+          max="180"
+          value="60"
+          class="w-12 bg-gray-700 text-white text-center px-1 py-1 rounded-lg text-xs font-bold focus:outline-none"
+        />
+      </div>
+      <div class="flex gap-1">
+        <button
+          onclick="startGame()"
+          class="bg-green-600 hover:bg-green-500 active:scale-95 px-3 py-1.5 rounded-xl font-bold text-xs text-white shadow"
+        >
+          Bắt Đầu
+        </button>
+        <button
+          onclick="resetToIdle()"
+          class="bg-gray-700 hover:bg-gray-600 active:scale-95 px-2.5 py-1.5 rounded-xl font-bold text-xs text-white"
+        >
+          Làm Lại
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Kho tàng Emoji HTML phong phú
+      const emojiPool = [
+        "🍎",
+        "🍌",
+        "🍇",
+        "🍉",
+        "🍓",
+        "🍒",
+        "🍍",
+        "🥝",
+        "🥑",
+        "🍔",
+        "🍕",
+        "🚀",
+        "⭐",
+        "🐱",
+        "🐶",
+        "🦊",
+        "🐼",
+        "🦁",
+        "⚽",
+        "🏀",
+        "🚗",
+        "✈️",
+        "🎸",
+        "💻",
+        "🔥",
+        "💎",
+        "🍀",
+        "🎯",
+      ];
+
+      let numPairs = 10;
+      let totalCards = 20;
+      let timeLimit = 60;
+      let timeLeft = 60;
+      let timerInterval = null;
+      let isPlaying = false;
+
+      let matchedPairs = 0;
+      let missCount = 0;
+      let firstCard = null;
+      let secondCard = null;
+      let lockBoard = false;
+
+      function resetToIdle() {
+        isPlaying = false;
+        if (timerInterval) clearInterval(timerInterval);
+
+        document.getElementById("countdown-display").innerText = "--";
+        document.getElementById("matched-display").innerText = "0 / 0";
+        document.getElementById("miss-display").innerText = "0";
+        document.getElementById("gameover-modal").classList.add("hidden");
+
+        const container = document.getElementById("game-container");
+        container.innerHTML = `
+                <div class="text-center text-gray-400 text-sm font-medium px-4">
+                    Chọn số cặp thẻ và thời gian, sau đó bấm <span class="text-green-400 font-bold">"Bắt Đầu"</span> để chơi!
+                </div>
+            `;
+      }
+
+      function startGame() {
+        let pairsInput = document.getElementById("pairs-input");
+        let timeInput = document.getElementById("time-input");
+
+        numPairs = parseInt(pairsInput.value) || 10;
+        if (numPairs < 4) numPairs = 4;
+        if (numPairs > 18) numPairs = 18;
+        pairsInput.value = numPairs;
+
+        totalCards = numPairs * 2;
+
+        timeLimit = parseInt(timeInput.value) || 60;
+        if (timeLimit < 10) timeLimit = 10;
+        timeInput.value = timeLimit;
+
+        timeLeft = timeLimit;
+        matchedPairs = 0;
+        missCount = 0;
+        firstCard = null;
+        secondCard = null;
+        lockBoard = false;
+
+        document.getElementById("matched-display").innerText =
+          `0 / ${numPairs}`;
+        document.getElementById("miss-display").innerText = "0";
+        document.getElementById("countdown-display").innerText = timeLeft + "s";
+        document.getElementById("gameover-modal").classList.add("hidden");
+
+        isPlaying = true;
+        renderCardsBoard();
+        startCountdown();
+      }
+
+      function renderCardsBoard() {
+        const container = document.getElementById("game-container");
+        container.innerHTML = "";
+
+        // Chọn ngẫu nhiên emoji từ kho
+        let shuffledEmojis = [...emojiPool].sort(() => Math.random() - 0.5);
+        let selectedEmojis = shuffledEmojis.slice(0, numPairs);
+
+        // Nhân đôi để tạo thành các cặp
+        let cardDeck = [...selectedEmojis, ...selectedEmojis];
+        // Xáo trộn vị trí thẻ bài
+        cardDeck.sort(() => Math.random() - 0.5);
+
+        // Tự động tính số cột và hàng tối ưu cho lưới bài
+        let cols = totalCards <= 12 ? 4 : totalCards <= 20 ? 5 : 6;
+        if (totalCards === 26) cols = 6; // ví dụ 13 cặp = 26 thẻ -> 6 cột x 5 hàng (dư 4 ô)
+
+        const grid = document.createElement("div");
+        grid.className =
+          "w-full h-full grid gap-2 p-1 items-center justify-center overflow-auto";
+        grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+
+        cardDeck.forEach((emoji, index) => {
+          const card = document.createElement("div");
+          card.className =
+            "w-full aspect-square perspective-1000 cursor-pointer animate-pop";
+          card.dataset.emoji = emoji;
+
+          card.innerHTML = `
+                    <div class="relative w-full h-full duration-300 transform-style-3d card-inner rounded-xl shadow-md">
+                        <!-- MẶT SAU (LÚC ÚP) -->
+                        <div class="absolute inset-0 w-full h-full bg-gray-800 border border-gray-700 rounded-xl flex items-center justify-center text-lg font-bold text-purple-400 backface-hidden shadow-inner hover:bg-gray-700 transition-colors">
+                            ❓
+                        </div>
+                        <!-- MẶT TRƯỚC (LÚC LẬT EMOJI) -->
+                        <div class="absolute inset-0 w-full h-full bg-gray-700 border border-gray-600 rounded-xl flex items-center justify-center text-2xl sm:text-3xl rotate-y-180 backface-hidden shadow-inner">
+                            ${emoji}
+                        </div>
+                    </div>
+                `;
+
+          card.addEventListener("click", () => flipCard(card));
+          grid.appendChild(card);
+        });
+
+        container.appendChild(grid);
+      }
+
+      function startCountdown() {
+        if (timerInterval) clearInterval(timerInterval);
+
+        timerInterval = setInterval(() => {
+          if (!isPlaying) return;
+          timeLeft--;
+          document.getElementById("countdown-display").innerText =
+            timeLeft + "s";
+
+          if (timeLeft <= 0) {
+            timeLeft = 0;
+            document.getElementById("countdown-display").innerText = "0s";
+            endGame(false);
+          }
+        }, 1000);
+      }
+
+      function flipCard(card) {
+        if (!isPlaying || lockBoard) return;
+        if (card === firstCard) return; // Không cho bấm 2 lần vào cùng 1 thẻ đang lật
+        if (card.classList.contains("matched")) return; // Bỏ qua thẻ đã tìm ra trước đó
+
+        // Lật thẻ bằng cách xoay inner
+        let inner = card.querySelector(".card-inner");
+        inner.classList.add("rotate-y-180");
+
+        if (!firstCard) {
+          firstCard = card;
+          return;
+        }
+
+        secondCard = card;
+        checkForMatch();
+      }
+
+      function checkForMatch() {
+        let isMatch = firstCard.dataset.emoji === secondCard.dataset.emoji;
+
+        if (isMatch) {
+          disableCards();
+        } else {
+          unflipCards();
+        }
+      }
+
+      function disableCards() {
+        firstCard.classList.add("matched");
+        secondCard.classList.add("matched");
+
+        // Hiệu ứng mờ chìm xuống cho cặp đã đúng
+        setTimeout(() => {
+          firstCard.style.opacity = "0.25";
+          firstCard.style.pointerEvents = "none";
+          secondCard.style.opacity = "0.25";
+          secondCard.style.pointerEvents = "none";
+          resetTurn();
+
+          matchedPairs++;
+          document.getElementById("matched-display").innerText =
+            `${matchedPairs} / ${numPairs}`;
+
+          // Kiểm tra nếu đã tìm đủ hết tất cả các cặp -> CHIẾN THẮNG
+          if (matchedPairs === numPairs) {
+            endGame(true);
+          }
+        }, 300);
+      }
+
+      function unflipCards() {
+        lockBoard = true;
+        missCount++;
+        document.getElementById("miss-display").innerText = missCount;
+
+        if (navigator.vibrate) navigator.vibrate(100);
+
+        setTimeout(() => {
+          firstCard
+            .querySelector(".card-inner")
+            .classList.remove("rotate-y-180");
+          secondCard
+            .querySelector(".card-inner")
+            .classList.remove("rotate-y-180");
+          resetTurn();
+        }, 800); // 0.8 giây để người chơi kịp nhìn thấy hình trước khi úp mặt lại
+      }
+
+      function resetTurn() {
+        [firstCard, secondCard, lockBoard] = [null, null, false];
+      }
+
+      function endGame(isWin) {
+        isPlaying = false;
+        if (timerInterval) clearInterval(timerInterval);
+
+        let modalIcon = document.getElementById("modal-icon");
+        let modalTitle = document.getElementById("modal-title");
+        let modalDesc = document.getElementById("modal-desc");
+
+        if (isWin) {
+          modalIcon.innerText = "🏆";
+          modalTitle.innerText = "XUẤT SẮC!";
+          modalDesc.innerText =
+            "M đã lật khớp toàn bộ các cặp thẻ bài trí nhớ!";
+          document.getElementById("final-time").innerText =
+            timeLeft + "s (còn dư)";
+        } else {
+          modalIcon.innerText = "⏰";
+          modalTitle.innerText = "HẾT GIỜ RỒI!";
+          modalDesc.innerText =
+            "Tiếc quá, chưa lật hết cặp mà thời gian đã cạn!";
+          document.getElementById("final-time").innerText = "0s";
+        }
+
+        document.getElementById("final-miss").innerText = missCount;
+        document.getElementById("gameover-modal").classList.remove("hidden");
+      }
+
+      window.onload = () => {
+        resetToIdle();
+      };
+    </script>
+  </body>
+</html>

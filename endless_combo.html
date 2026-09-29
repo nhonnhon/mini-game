@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Săn Số Sinh Tồn - Time Score Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(0.6);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .animate-pop {
+        animation: pop 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+      @keyframes pulse-fast {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.08);
+        }
+      }
+      .animate-target {
+        animation: pulse-fast 0.6s infinite ease-in-out;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-900 text-white h-screen flex flex-col justify-between p-3 select-none overflow-hidden relative"
+  >
+    <!-- HEADER / THÔNG TIN TRÒ CHƠI -->
+    <div class="w-full max-w-md mx-auto flex-shrink-0">
+      <!-- BẢNG ĐIỂM, THỜI GIAN TỔNG & HIGHSCORE -->
+      <div
+        class="grid grid-cols-3 gap-2 bg-gray-800 p-2.5 rounded-2xl shadow-lg mb-2 text-center"
+      >
+        <div>
+          <span class="text-gray-400 text-[10px] block">THỜI GIAN TỔNG</span>
+          <span id="total-time" class="text-lg font-mono text-red-400 font-bold"
+            >60.0s</span
+          >
+        </div>
+        <div>
+          <span class="text-gray-400 text-[10px] block">ĐIỂM SỐ</span>
+          <span
+            id="score-display"
+            class="text-xl font-mono text-green-400 font-black"
+            >0</span
+          >
+        </div>
+        <div>
+          <span class="text-gray-400 text-[10px] block">KỶ LỤC (BEST)</span>
+          <span
+            id="highscore-display"
+            class="text-lg font-mono text-purple-400 font-bold"
+            >0</span
+          >
+        </div>
+      </div>
+
+      <!-- KHUNG HIỂN THỊ SỐ CẦN TÌM & THANH BAR PROCESS CHO TỪNG LƯỢT -->
+      <div
+        class="bg-gray-800 p-2.5 rounded-2xl shadow-lg mb-2 flex items-center justify-between px-4"
+      >
+        <div class="text-left">
+          <span class="text-gray-400 text-[10px] block">CẦN TÌM NGAY</span>
+          <span
+            id="required-num"
+            class="text-3xl font-black text-yellow-400 animate-target"
+            >--</span
+          >
+        </div>
+        <div class="w-36 flex flex-col items-end">
+          <span
+            id="round-time-text"
+            class="text-xs font-mono text-gray-300 mb-1"
+            >6.0s</span
+          >
+          <div class="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+            <div
+              id="round-progress"
+              class="bg-gradient-to-r from-green-500 to-yellow-400 h-full w-full transition-all duration-75"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KHUNG CHƠI GAME CHÍNH -->
+    <div
+      class="w-full max-w-md mx-auto flex-1 flex items-center justify-center relative overflow-hidden bg-gray-950 rounded-3xl border border-gray-800 p-3 my-1"
+    >
+      <div
+        id="game-container"
+        class="w-full h-full flex items-center justify-center"
+      >
+        <div class="text-center text-gray-400 text-sm font-medium px-4">
+          Bấm nút <span class="text-green-400 font-bold">"Bắt Đầu"</span> bên
+          dưới để vào trận!
+        </div>
+      </div>
+    </div>
+
+    <!-- MÀN HÌNH KẾT THÚC (GAME OVER) -->
+    <div
+      id="gameover-modal"
+      class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden"
+    >
+      <div
+        class="bg-gray-800 border border-gray-700 w-full max-w-xs p-6 rounded-3xl text-center shadow-2xl animate-pop"
+      >
+        <div class="text-5xl mb-3">🏆</div>
+        <h2 class="text-2xl font-black text-yellow-400 mb-1">KẾT THÚC TRẬN!</h2>
+        <p class="text-gray-300 text-xs mb-4">
+          M đã chiến đấu hết mình trong 60 giây.
+        </p>
+
+        <div class="bg-gray-900 p-4 rounded-2xl mb-5 space-y-2">
+          <div>
+            <span class="text-gray-400 text-xs">Điểm số đạt được:</span>
+            <div id="final-score" class="text-3xl font-black text-green-400">
+              0
+            </div>
+          </div>
+          <div>
+            <span class="text-gray-400 text-xs">Kỷ lục của cấu hình này:</span>
+            <div id="final-highscore" class="text-xl font-bold text-purple-400">
+              0
+            </div>
+          </div>
+        </div>
+
+        <button
+          onclick="startGame()"
+          class="w-full bg-gradient-to-r from-purple-600 to-pink-600 active:scale-95 transition-all py-3 rounded-xl font-bold text-base text-white shadow-lg"
+        >
+          Chơi Ván Mới
+        </button>
+      </div>
+    </div>
+
+    <!-- FOOTER / CẤU HÌNH & NÚT BẮT ĐẦU -->
+    <div
+      class="w-full max-w-md mx-auto flex items-center justify-between gap-2 text-gray-500 text-[11px] flex-shrink-0 bg-gray-800 p-2.5 rounded-2xl"
+    >
+      <div class="flex items-center gap-1.5">
+        <span>N:</span>
+        <select
+          id="grid-n-select"
+          onchange="onConfigChange()"
+          class="bg-gray-700 text-white px-2 py-1 rounded-lg text-xs font-bold focus:outline-none"
+        >
+          <option value="6">6x6</option>
+          <option value="8" selected>8x8</option>
+          <option value="10">10x10</option>
+        </select>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span>Giây:</span>
+        <input
+          type="number"
+          id="round-time-input"
+          min="2"
+          max="15"
+          value="6"
+          onchange="onConfigChange()"
+          class="w-11 bg-gray-700 text-white text-center px-1 py-1 rounded-lg text-xs font-bold focus:outline-none"
+        />
+      </div>
+      <div class="flex gap-1.5">
+        <button
+          onclick="startGame()"
+          class="bg-green-600 hover:bg-green-500 active:scale-95 px-3 py-1.5 rounded-xl font-bold text-xs text-white shadow"
+        >
+          Bắt Đầu
+        </button>
+        <button
+          onclick="resetToIdle()"
+          class="bg-gray-700 hover:bg-gray-600 active:scale-95 px-2.5 py-1.5 rounded-xl font-bold text-xs text-white"
+        >
+          Chơi Lại
+        </button>
+      </div>
+    </div>
+
+    <script>
+      let N = 8;
+      let maxNumber = 64;
+      let score = 0;
+
+      let totalGameTime = 60.0;
+      let roundTimeLeft = 6.0;
+      let roundTotalTime = 6.0;
+
+      let gameInterval = null;
+      let roundInterval = null;
+      let isPlaying = false;
+      let currentTarget = 0;
+      let numbersList = [];
+
+      function getStorageKey(gridSize, roundSec) {
+        return `timescore_hs_${gridSize}x${gridSize}_${roundSec}s`;
+      }
+
+      function updateHighScoreDisplay() {
+        let selectElem = document.getElementById("grid-n-select");
+        let secInput = document.getElementById("round-time-input");
+        let currentN = parseInt(selectElem.value);
+        let secVal = parseInt(secInput.value) || 6;
+
+        let saved = localStorage.getItem(getStorageKey(currentN, secVal)) || 0;
+        document.getElementById("highscore-display").innerText = saved;
+      }
+
+      function onConfigChange() {
+        updateHighScoreDisplay();
+        if (!isPlaying) {
+          // Nếu đang ở màn hình chờ mà đổi config thì load sẵn bàn cờ mẫu
+          renderPreviewBoard();
+        }
+      }
+
+      // Vẽ bàn cờ xem trước khi chưa bấm Bắt Đầu
+      function renderPreviewBoard() {
+        let selectElem = document.getElementById("grid-n-select");
+        N = parseInt(selectElem.value);
+        maxNumber = N * N;
+
+        const container = document.getElementById("game-container");
+        container.innerHTML = "";
+
+        let previewNums = [];
+        for (let i = 1; i <= maxNumber; i++) previewNums.push(i);
+        for (let i = previewNums.length - 1; i > 0; i--) {
+          let j = Math.floor(Math.random() * (i + 1));
+          [previewNums[i], previewNums[j]] = [previewNums[j], previewNums[i]];
+        }
+
+        const gridWrapper = document.createElement("div");
+        gridWrapper.className =
+          "w-full h-full grid gap-1 p-1 items-center justify-center aspect-square max-w-[450px] max-h-[450px] opacity-60";
+        gridWrapper.style.gridTemplateColumns = `repeat(${N}, minmax(0, 1fr))`;
+        gridWrapper.style.gridTemplateRows = `repeat(${N}, minmax(0, 1fr))`;
+
+        previewNums.forEach((num) => {
+          const item = document.createElement("div");
+          let textSize = N > 8 ? "text-xs" : "text-sm";
+          item.className = `w-full h-full bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center font-bold ${textSize} text-gray-400 aspect-square`;
+          item.innerText = num;
+          gridWrapper.appendChild(item);
+        });
+
+        container.appendChild(gridWrapper);
+      }
+
+      function resetToIdle() {
+        isPlaying = false;
+        if (gameInterval) clearInterval(gameInterval);
+        if (roundInterval) clearInterval(roundInterval);
+
+        score = 0;
+        totalGameTime = 60.0;
+        document.getElementById("score-display").innerText = score;
+        document.getElementById("total-time").innerText = "60.0s";
+        document.getElementById("required-num").innerText = "--";
+        document.getElementById("round-time-text").innerText = "6.0s";
+        document.getElementById("round-progress").style.width = "100%";
+        document.getElementById("gameover-modal").classList.add("hidden");
+
+        renderPreviewBoard();
+      }
+
+      function startGame() {
+        let selectElem = document.getElementById("grid-n-select");
+        let secInput = document.getElementById("round-time-input");
+
+        N = parseInt(selectElem.value);
+        maxNumber = N * N;
+
+        let customSec = parseFloat(secInput.value);
+        if (isNaN(customSec) || customSec < 2 || customSec > 15) {
+          customSec = 6;
+          secInput.value = 6;
+        }
+        roundTotalTime = customSec;
+
+        score = 0;
+        totalGameTime = 60.0;
+
+        document.getElementById("score-display").innerText = score;
+        document.getElementById("total-time").innerText =
+          totalGameTime.toFixed(1) + "s";
+        updateHighScoreDisplay();
+        document.getElementById("gameover-modal").classList.add("hidden");
+
+        isPlaying = true;
+        renderBoard();
+        startNewRound();
+        startGlobalGameTimer();
+      }
+
+      // Đồng hồ tổng 60 giây của toàn trận đấu
+      function startGlobalGameTimer() {
+        if (gameInterval) clearInterval(gameInterval);
+
+        gameInterval = setInterval(() => {
+          if (!isPlaying) return;
+          totalGameTime -= 0.1;
+          if (totalGameTime <= 0) {
+            totalGameTime = 0;
+            document.getElementById("total-time").innerText = "0.0s";
+            endGame();
+          } else {
+            document.getElementById("total-time").innerText =
+              totalGameTime.toFixed(1) + "s";
+          }
+        }, 100);
+      }
+
+      function renderBoard() {
+        const container = document.getElementById("game-container");
+        container.innerHTML = "";
+
+        numbersList = [];
+        for (let i = 1; i <= maxNumber; i++) numbersList.push(i);
+
+        for (let i = numbersList.length - 1; i > 0; i--) {
+          let j = Math.floor(Math.random() * (i + 1));
+          [numbersList[i], numbersList[j]] = [numbersList[j], numbersList[i]];
+        }
+
+        const gridWrapper = document.createElement("div");
+        gridWrapper.className =
+          "w-full h-full grid gap-1 p-1 items-center justify-center aspect-square max-w-[450px] max-h-[450px]";
+        gridWrapper.style.gridTemplateColumns = `repeat(${N}, minmax(0, 1fr))`;
+        gridWrapper.style.gridTemplateRows = `repeat(${N}, minmax(0, 1fr))`;
+
+        numbersList.forEach((num) => {
+          const item = document.createElement("div");
+          let textSize = N > 8 ? "text-xs" : "text-sm";
+
+          item.className = `w-full h-full bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center font-bold ${textSize} text-yellow-300 shadow cursor-pointer active:scale-95 transition-all animate-pop aspect-square`;
+          item.innerText = num;
+
+          item.addEventListener("click", () => handleCellClick(item, num));
+          gridWrapper.appendChild(item);
+        });
+
+        container.appendChild(gridWrapper);
+      }
+
+      // Khởi động lượt tìm số mới
+      function startNewRound() {
+        if (!isPlaying) return;
+
+        let randomIndex = Math.floor(Math.random() * numbersList.length);
+        currentTarget = numbersList[randomIndex];
+        document.getElementById("required-num").innerText = currentTarget;
+
+        roundTimeLeft = roundTotalTime;
+        updateRoundProgressBar();
+
+        if (roundInterval) clearInterval(roundInterval);
+
+        roundInterval = setInterval(() => {
+          if (!isPlaying) return;
+          roundTimeLeft -= 0.05;
+          if (roundTimeLeft <= 0) {
+            roundTimeLeft = 0;
+            updateRoundProgressBar();
+            clearInterval(roundInterval);
+
+            // HẾT GIỜ LƯỢT: Tự động shuffle lại bảng và ra số mới
+            renderBoard();
+            startNewRound();
+          } else {
+            updateRoundProgressBar();
+          }
+        }, 50);
+      }
+
+      function updateRoundProgressBar() {
+        let percent = (roundTimeLeft / roundTotalTime) * 100;
+        let bar = document.getElementById("round-progress");
+        let text = document.getElementById("round-time-text");
+
+        bar.style.width = percent + "%";
+        text.innerText = roundTimeLeft.toFixed(1) + "s";
+
+        if (roundTimeLeft <= 2.0) {
+          bar.className =
+            "bg-gradient-to-r from-red-600 to-rose-500 h-full w-full transition-all duration-75";
+          text.className = "text-xs font-mono text-red-400 font-bold mb-1";
+        } else {
+          bar.className =
+            "bg-gradient-to-r from-green-500 to-yellow-400 h-full w-full transition-all duration-75";
+          text.className = "text-xs font-mono text-gray-300 mb-1";
+        }
+      }
+
+      function handleCellClick(item, num) {
+        if (!isPlaying) return;
+
+        if (num === currentTarget) {
+          if (roundInterval) clearInterval(roundInterval);
+
+          score++;
+          document.getElementById("score-display").innerText = score;
+
+          item.classList.add("bg-green-600", "text-white");
+
+          setTimeout(() => {
+            renderBoard();
+            startNewRound();
+          }, 80);
+        } else {
+          if (navigator.vibrate) navigator.vibrate(80);
+
+          item.classList.add("bg-red-600", "text-white");
+          setTimeout(() => {
+            item.classList.remove("bg-red-600", "text-white");
+          }, 150);
+        }
+      }
+
+      function endGame() {
+        isPlaying = false;
+        if (gameInterval) clearInterval(gameInterval);
+        if (roundInterval) clearInterval(roundInterval);
+
+        let storageKey = getStorageKey(N, roundTotalTime);
+        let oldBest = parseInt(localStorage.getItem(storageKey)) || 0;
+        if (score > oldBest) {
+          localStorage.setItem(storageKey, score);
+          oldBest = score;
+        }
+
+        document.getElementById("final-score").innerText = score;
+        document.getElementById("final-highscore").innerText = oldBest;
+        updateHighScoreDisplay();
+
+        document.getElementById("gameover-modal").classList.remove("hidden");
+      }
+
+      window.onload = () => {
+        updateHighScoreDisplay();
+        renderPreviewBoard();
+      };
+    </script>
+  </body>
+</html>

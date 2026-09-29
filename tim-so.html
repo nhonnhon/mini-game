@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Săn Số Lưới Vuông NxN - Highscore</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .animate-pop {
+        animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-900 text-white h-screen flex flex-col justify-between p-3 select-none overflow-hidden"
+  >
+    <!-- HEADER / ĐIỀU KHIỂN -->
+    <div class="w-full max-w-md mx-auto flex-shrink-0">
+      <!-- BẢNG THÔNG TIN: Thời gian, Kỷ lục, Số cần tìm -->
+      <div
+        class="grid grid-cols-3 gap-2 bg-gray-800 p-2.5 rounded-2xl shadow-lg mb-2 text-center"
+      >
+        <div>
+          <span class="text-gray-400 text-[10px] block">Cần tìm</span>
+          <span id="target-display" class="text-xl font-bold text-yellow-400"
+            >1</span
+          >
+        </div>
+        <div>
+          <span class="text-gray-400 text-[10px] block">Thời gian</span>
+          <span id="timer-display" class="text-lg font-mono text-green-400"
+            >0.00s</span
+          >
+        </div>
+        <div>
+          <span class="text-gray-400 text-[10px] block">Kỷ lục (Best)</span>
+          <span id="highscore-display" class="text-lg font-mono text-purple-400"
+            >--</span
+          >
+        </div>
+      </div>
+
+      <!-- Ô NHẬP SỐ HÀNG N (MAX = 10) & NÚT BẮT ĐẦU -->
+      <div
+        class="bg-gray-800 p-2.5 rounded-2xl shadow-lg flex items-center gap-2"
+      >
+        <div class="flex-1">
+          <label class="block text-gray-400 text-[10px] font-semibold mb-1"
+            >NHẬP SỐ HÀNG N (Từ 3 đến 10):</label
+          >
+          <input
+            type="number"
+            id="grid-n-input"
+            min="3"
+            max="10"
+            value="10"
+            oninput="updateHighScoreDisplay()"
+            class="w-full bg-gray-700 text-white px-3 py-1.5 rounded-xl text-sm font-bold border border-gray-600 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+        <button
+          onclick="initSquareGridGame()"
+          class="bg-gradient-to-r from-purple-600 to-pink-600 active:scale-95 transition-transform px-4 py-2.5 rounded-xl font-bold text-xs shadow text-white mt-4"
+        >
+          Chơi Ngay
+        </button>
+      </div>
+    </div>
+
+    <!-- KHUNG CHƠI GAME CHÍNH -->
+    <div
+      class="w-full max-w-md mx-auto flex-1 flex items-center justify-center relative overflow-hidden bg-gray-950 rounded-3xl border border-gray-800 p-3 my-2"
+    >
+      <div
+        id="game-container"
+        class="w-full h-full flex items-center justify-center"
+      ></div>
+    </div>
+
+    <!-- FOOTER -->
+    <div
+      class="w-full max-w-md mx-auto text-center text-gray-500 text-[11px] flex-shrink-0"
+    >
+      Chế độ Lưới Vuông • Highscore lưu riêng theo đúng input N x N
+    </div>
+
+    <script>
+      let currentTarget = 1;
+      let maxTarget = 100;
+      let N = 10;
+      let startTime = null;
+      let timerInterval = null;
+      let isPlaying = false;
+
+      // Tạo key lưu highscore riêng biệt theo đúng giá trị N người dùng nhập
+      function getStorageKey(gridSize) {
+        return `schulte_highscore_${gridSize}x${gridSize}`;
+      }
+
+      function updateHighScoreDisplay() {
+        let inputField = document.getElementById("grid-n-input");
+        let nVal = parseInt(inputField.value);
+
+        // Ràng buộc giá trị nhập trong khoảng từ 3 đến 10
+        if (isNaN(nVal)) nVal = 10;
+        if (nVal > 10) nVal = 10;
+        if (nVal < 3) nVal = 3;
+
+        let savedScore = localStorage.getItem(getStorageKey(nVal));
+        let hsDisplay = document.getElementById("highscore-display");
+        if (savedScore) {
+          hsDisplay.innerText = parseFloat(savedScore).toFixed(2) + "s";
+        } else {
+          hsDisplay.innerText = "Chưa có";
+        }
+      }
+
+      function initSquareGridGame() {
+        let inputField = document.getElementById("grid-n-input");
+        let n = parseInt(inputField.value);
+
+        if (isNaN(n) || n < 3 || n > 10) {
+          alert("M vui lòng nhập số hàng N từ 3 đến 10 thôi nhé!");
+          inputField.value = 10;
+          n = 10;
+        }
+
+        N = n;
+        maxTarget = N * N;
+        currentTarget = 1;
+        document.getElementById("target-display").innerText = currentTarget;
+        document.getElementById("timer-display").innerText = "0.00s";
+
+        updateHighScoreDisplay();
+        stopTimer();
+        isPlaying = true;
+
+        renderSquareBoard();
+      }
+
+      function stopTimer() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+      }
+
+      function startGlobalTimer() {
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+          let elapsed = (Date.now() - startTime) / 1000;
+          document.getElementById("timer-display").innerText =
+            elapsed.toFixed(2) + "s";
+        }, 50);
+      }
+
+      function renderSquareBoard() {
+        const container = document.getElementById("game-container");
+        container.innerHTML = "";
+
+        let numbers = [];
+        for (let i = 1; i <= maxTarget; i++) numbers.push(i);
+
+        for (let i = numbers.length - 1; i > 0; i--) {
+          let j = Math.floor(Math.random() * (i + 1));
+          [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+        }
+
+        const gridWrapper = document.createElement("div");
+        gridWrapper.className =
+          "w-full h-full grid gap-1 p-1 items-center justify-center aspect-square max-w-[450px] max-h-[450px]";
+        gridWrapper.style.gridTemplateColumns = `repeat(${N}, minmax(0, 1fr))`;
+        gridWrapper.style.gridTemplateRows = `repeat(${N}, minmax(0, 1fr))`;
+
+        numbers.forEach((num) => {
+          const item = document.createElement("div");
+          let textSize = N > 8 ? "text-xs" : "text-sm";
+
+          item.className = `w-full h-full bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center font-bold ${textSize} text-yellow-300 shadow cursor-pointer active:scale-95 transition-all animate-pop aspect-square`;
+          item.innerText = num;
+
+          item.addEventListener("click", () => handleSquareClick(item, num));
+          gridWrapper.appendChild(item);
+        });
+
+        container.appendChild(gridWrapper);
+      }
+
+      function handleSquareClick(item, num) {
+        if (!isPlaying) return;
+
+        if (currentTarget === 1 && !timerInterval) {
+          startGlobalTimer();
+        }
+
+        if (num === currentTarget) {
+          item.className = `w-full h-full bg-gray-800/40 border border-gray-700/30 rounded-lg flex items-center justify-center font-bold text-xs text-yellow-500/40 opacity-30 transition-all pointer-events-none aspect-square`;
+
+          currentTarget++;
+
+          if (currentTarget <= maxTarget) {
+            document.getElementById("target-display").innerText = currentTarget;
+          } else {
+            stopTimer();
+            isPlaying = false;
+            let finalTimeSeconds = (Date.now() - startTime) / 1000;
+            let finalTimeString = finalTimeSeconds.toFixed(2) + "s";
+
+            let storageKey = getStorageKey(N);
+            let oldScore = localStorage.getItem(storageKey);
+            let isNewRecord = false;
+
+            if (!oldScore || finalTimeSeconds < parseFloat(oldScore)) {
+              localStorage.setItem(storageKey, finalTimeSeconds);
+              isNewRecord = true;
+              updateHighScoreDisplay();
+            }
+
+            setTimeout(() => {
+              if (isNewRecord) {
+                alert(
+                  `🔥 KỶ LỤC MỚI (${N}x${N})! M đã phá đảo trong: ${finalTimeString}`,
+                );
+              } else {
+                alert(
+                  `Quá đỉnh! M hoàn thành lưới ${N}x${N} trong: ${finalTimeString} (Kỷ lục cũ: ${parseFloat(oldScore).toFixed(2)}s)`,
+                );
+              }
+            }, 100);
+          }
+        } else {
+          if (navigator.vibrate) navigator.vibrate(100);
+          item.classList.add("bg-red-600", "text-white");
+          setTimeout(() => {
+            item.classList.remove("bg-red-600", "text-white");
+          }, 200);
+        }
+      }
+
+      window.onload = () => {
+        updateHighScoreDisplay();
+        initSquareGridGame();
+      };
+    </script>
+  </body>
+</html>

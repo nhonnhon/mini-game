@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Săn Số Phản Xạ - Time Attack 10s</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .animate-pop {
+        animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-900 text-white h-screen flex flex-col justify-between p-3 select-none overflow-hidden relative"
+  >
+    <!-- HEADER / THÔNG TIN TRÒ CHƠI -->
+    <div class="w-full max-w-md mx-auto flex-shrink-0">
+      <!-- Ô HIỂN THỊ SỐ CẦN TÌM -->
+      <div
+        class="bg-gray-800 p-3 rounded-2xl shadow-lg mb-2 text-center relative overflow-hidden"
+      >
+        <span class="text-gray-400 text-xs block mb-1"
+          >CẦN TÌM NHANH SỐ NÀY</span
+        >
+        <div
+          id="required-num"
+          class="text-4xl font-black text-yellow-400 animate-bounce"
+        >
+          --
+        </div>
+
+        <!-- THANH BAR PROCESS KÉO NGƯỢC (10 GIÂY) -->
+        <div class="w-full bg-gray-700 h-2 rounded-full mt-3 overflow-hidden">
+          <div
+            id="progress-bar"
+            class="bg-gradient-to-r from-green-500 to-yellow-500 h-full w-full transition-all duration-100"
+          ></div>
+        </div>
+      </div>
+
+      <!-- CẤU HÌNH & NÚT ĐIỀU KHIỂN -->
+      <div
+        class="bg-gray-800 p-2.5 rounded-2xl shadow-lg flex items-center gap-2"
+      >
+        <div class="flex-1">
+          <label class="block text-gray-400 text-[10px] font-semibold mb-1"
+            >NHẬP SỐ HÀNG N (VD: 8=8x8, 10=10x10):</label
+          >
+          <input
+            type="number"
+            id="grid-n-input"
+            min="3"
+            max="10"
+            value="8"
+            class="w-full bg-gray-700 text-white px-3 py-1.5 rounded-xl text-sm font-bold border border-gray-600 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+        <button
+          onclick="startGame()"
+          class="bg-gradient-to-r from-red-600 to-amber-600 active:scale-95 transition-transform px-4 py-2.5 rounded-xl font-bold text-xs shadow text-white mt-4"
+        >
+          Tạo Lại Lưới
+        </button>
+      </div>
+    </div>
+
+    <!-- KHUNG CHƠI GAME CHÍNH -->
+    <div
+      class="w-full max-w-md mx-auto flex-1 flex items-center justify-center relative overflow-hidden bg-gray-950 rounded-3xl border border-gray-800 p-3 my-2"
+    >
+      <div
+        id="game-container"
+        class="w-full h-full flex items-center justify-center"
+      >
+        <div class="text-center text-gray-500 text-sm">
+          Đang tải bàn chơi...
+        </div>
+      </div>
+    </div>
+
+    <!-- POPUP CHÚC MỪNG KHI TÌM ĐÚNG -->
+    <div
+      id="win-modal"
+      class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden"
+    >
+      <div
+        class="bg-gray-800 border border-gray-700 w-full max-w-xs p-6 rounded-3xl text-center shadow-2xl animate-pop"
+      >
+        <div class="text-5xl mb-3">🎉</div>
+        <h2 class="text-2xl font-black text-yellow-400 mb-1">XUẤT SẮC!</h2>
+        <p class="text-gray-300 text-sm mb-6">
+          M đã tìm ra số chính xác trong thời gian cho phép!
+        </p>
+        <button
+          onclick="restartGame()"
+          class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 active:scale-95 transition-all py-3 rounded-xl font-bold text-base text-white shadow-lg"
+        >
+          Chơi Lại Ngay
+        </button>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div
+      class="w-full max-w-md mx-auto text-center text-gray-500 text-[11px] flex-shrink-0"
+    >
+      Thử Thách 10 Giây • Hết giờ tự động đổi số & random lại vị trí
+    </div>
+
+    <script>
+      let N = 8;
+      let maxNumber = 64;
+      let currentTarget = 0;
+      let timeLeft = 5;
+      let totalTime = 5;
+      let timerInterval = null;
+      let isPlaying = false;
+      let numbersList = [];
+
+      function startGame() {
+        let inputField = document.getElementById("grid-n-input");
+        let n = parseInt(inputField.value);
+
+        if (isNaN(n) || n < 3 || n > 10) {
+          alert("M nhập số hàng N từ 3 đến 10 thôi nhé!");
+          inputField.value = 8;
+          n = 8;
+        }
+
+        N = n;
+        maxNumber = N * N;
+        document.getElementById("win-modal").classList.add("hidden");
+
+        isPlaying = true;
+        renderBoardAndNewRound();
+      }
+
+      function renderBoardAndNewRound() {
+        const container = document.getElementById("game-container");
+        container.innerHTML = "";
+
+        numbersList = [];
+        for (let i = 1; i <= maxNumber; i++) numbersList.push(i);
+
+        // Xáo trộn vị trí các số ngẫu nhiên trên lưới
+        for (let i = numbersList.length - 1; i > 0; i--) {
+          let j = Math.floor(Math.random() * (i + 1));
+          [numbersList[i], numbersList[j]] = [numbersList[j], numbersList[i]];
+        }
+
+        const gridWrapper = document.createElement("div");
+        gridWrapper.className =
+          "w-full h-full grid gap-1 p-1 items-center justify-center aspect-square max-w-[450px] max-h-[450px]";
+        gridWrapper.style.gridTemplateColumns = `repeat(${N}, minmax(0, 1fr))`;
+        gridWrapper.style.gridTemplateRows = `repeat(${N}, minmax(0, 1fr))`;
+
+        numbersList.forEach((num) => {
+          const item = document.createElement("div");
+          let textSize = N > 8 ? "text-xs" : "text-sm";
+
+          item.className = `w-full h-full bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center font-bold ${textSize} text-yellow-300 shadow cursor-pointer active:scale-95 transition-all animate-pop aspect-square`;
+          item.innerText = num;
+
+          item.addEventListener("click", () => handleCellClick(item, num));
+          gridWrapper.appendChild(item);
+        });
+
+        container.appendChild(gridWrapper);
+
+        // Bắt đầu chọn số mới và chạy lại 10 giây
+        pickNewTargetAndResetTimer();
+      }
+
+      function pickNewTargetAndResetTimer() {
+        if (!isPlaying) return;
+
+        // Random chọn 1 số trong bảng làm mục tiêu
+        let randomIndex = Math.floor(Math.random() * numbersList.length);
+        currentTarget = numbersList[randomIndex];
+        document.getElementById("required-num").innerText = currentTarget;
+
+        // Reset thời gian 10s
+        timeLeft = totalTime;
+        updateProgressBar();
+
+        if (timerInterval) clearInterval(timerInterval);
+
+        timerInterval = setInterval(() => {
+          timeLeft -= 0.05; // Cập nhật mượt mà từng 50ms
+          if (timeLeft <= 0) {
+            timeLeft = 0;
+            updateProgressBar();
+            clearInterval(timerInterval);
+
+            // HẾT GIỜ: Tự động random vị trí mới và đổi số khác
+            renderBoardAndNewRound();
+          } else {
+            updateProgressBar();
+          }
+        }, 50);
+      }
+
+      function updateProgressBar() {
+        let percent = (timeLeft / totalTime) * 100;
+        let bar = document.getElementById("progress-bar");
+        bar.style.width = percent + "%";
+
+        // Đổi màu thanh bar sang đỏ khi gần hết giờ (< 3 giây)
+        if (timeLeft <= 3.0) {
+          bar.className =
+            "bg-gradient-to-r from-red-600 to-rose-500 h-full w-full transition-all duration-100";
+        } else {
+          bar.className =
+            "bg-gradient-to-r from-green-500 to-yellow-500 h-full w-full transition-all duration-100";
+        }
+      }
+
+      function handleCellClick(item, num) {
+        if (!isPlaying) return;
+
+        if (num === currentTarget) {
+          // TÌM ĐÚNG SỐ: Dừng đồng hồ, hiện Popup chúc mừng
+          if (timerInterval) clearInterval(timerInterval);
+          isPlaying = false;
+
+          // Hiệu ứng chớp xanh
+          item.classList.add("bg-green-600", "text-white");
+
+          setTimeout(() => {
+            document.getElementById("win-modal").classList.remove("hidden");
+          }, 200);
+        } else {
+          // Bấm nhầm số khác -> Phạt trừ bớt 2 giây
+          if (navigator.vibrate) navigator.vibrate(100);
+
+          timeLeft = Math.max(0, timeLeft - 2.0);
+          updateProgressBar();
+
+          item.classList.add("bg-red-600", "text-white");
+          setTimeout(() => {
+            item.classList.remove("bg-red-600", "text-white");
+          }, 150);
+        }
+      }
+
+      function restartGame() {
+        document.getElementById("win-modal").classList.add("hidden");
+        startGame();
+      }
+
+      // Tự động chạy game khi load trang
+      window.onload = () => {
+        startGame();
+      };
+    </script>
+  </body>
+</html>

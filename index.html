@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Trang Chủ - BON BOSS game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(0.95);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .animate-pop {
+        animation: pop 0.25s ease-out forwards;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-950 text-white min-h-screen flex flex-col justify-between p-4 select-none"
+  >
+    <!-- HEADER TRANG CHỦ -->
+    <div class="w-full max-w-md mx-auto text-center py-4">
+      <h1 class="text-3xl font-black text-yellow-400 tracking-wider mb-1">
+        🎮 BON BOSS HUB
+      </h1>
+      <p class="text-gray-400 text-xs">
+        Kho tờ lề các tựa game rèn luyện phản xạ & trí nhớ
+      </p>
+    </div>
+
+    <!-- DANH SÁCH CÁC TRÒ CHƠI -->
+    <div
+      class="w-full max-w-md mx-auto flex-1 flex flex-col gap-3.5 justify-center py-2"
+    >
+      <!-- Game 1: Lưới Schulte Vuông NxN -->
+      <a
+        href="tim-so.html"
+        class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 transition-transform p-4 rounded-2xl shadow-lg flex items-center justify-between group animate-pop"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🔢</span>
+          <div class="text-left">
+            <div
+              class="font-bold text-base text-white group-hover:text-yellow-200 transition-colors"
+            >
+              Lưới Schulte (NxN)
+            </div>
+            <div class="text-xs text-blue-200">
+              Tìm tuần tự từ 1 đến hết, lưu Highscore
+            </div>
+          </div>
+        </div>
+        <span class="text-xl font-bold text-white/70">➡️</span>
+      </a>
+
+      <!-- Game 2: Thử Thách Thời Gian 5s -->
+      <a
+        href="time_attack.html"
+        class="bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-500 hover:to-red-500 active:scale-95 transition-transform p-4 rounded-2xl shadow-lg flex items-center justify-between group animate-pop"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">⚡</span>
+          <div class="text-left">
+            <div
+              class="font-bold text-base text-white group-hover:text-yellow-200 transition-colors"
+            >
+              Săn Số 5 Giây
+            </div>
+            <div class="text-xs text-amber-200">
+              Đếm ngược 5s, tìm số ngẫu nhiên cực nhanh
+            </div>
+          </div>
+        </div>
+        <span class="text-xl font-bold text-white/70">➡️</span>
+      </a>
+
+      <!-- Game 3: Endless Combo Mode -->
+      <a
+        href="endless_combo.html"
+        class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 active:scale-95 transition-transform p-4 rounded-2xl shadow-lg flex items-center justify-between group animate-pop"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🔥</span>
+          <div class="text-left">
+            <div
+              class="font-bold text-base text-white group-hover:text-yellow-200 transition-colors"
+            >
+              Săn Điểm Combo
+            </div>
+            <div class="text-xs text-purple-200">
+              Đấu tổng 60s, nhân chuỗi điểm x1, x2, x3...
+            </div>
+          </div>
+        </div>
+        <span class="text-xl font-bold text-white/70">➡️</span>
+      </a>
+
+      <!-- Game 5: Memory Match Lật Thẻ Emoji -->
+      <a
+        href="memory_match.html"
+        class="bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 active:scale-95 transition-transform p-4 rounded-2xl shadow-lg flex items-center justify-between group animate-pop"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🧩</span>
+          <div class="text-left">
+            <div
+              class="font-bold text-base text-white group-hover:text-yellow-200 transition-colors"
+            >
+              Lật Thẻ Trí Nhớ (Emoji)
+            </div>
+            <div class="text-xs text-rose-200">
+              Ghép cặp emoji trùng khớp, thử thách trí nhớ
+            </div>
+          </div>
+        </div>
+        <span class="text-xl font-bold text-white/70">➡️</span>
+      </a>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="w-full max-w-md mx-auto text-center text-gray-500 text-xs py-2">
+      Mobile Web Games Hub • Chạy trực tiếp trên trình duyệt
+    </div>
+  </body>
+</html>
