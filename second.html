@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Toán Lớp 2 - BON BOSS Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="bg-slate-900 text-white min-h-screen flex flex-col justify-between select-none"
+  >
+    <!-- Header -->
+    <header
+      class="w-full max-w-2xl mx-auto p-4 flex justify-between items-center"
+    >
+      <a
+        href="index.html"
+        class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl transition font-medium text-sm border border-slate-700"
+      >
+        ← Trang chủ
+      </a>
+      <div class="flex items-center gap-3">
+        <span
+          id="level-badge"
+          class="text-xs md:text-sm font-bold text-cyan-400 bg-cyan-400/10 px-3 py-1.5 rounded-xl border border-cyan-400/20"
+          >Màn 1 / 10</span
+        >
+        <div
+          class="text-xs md:text-sm font-semibold text-amber-400 bg-amber-400/10 px-3 py-1.5 rounded-xl border border-amber-400/20"
+        >
+          Đúng: <span id="score">0</span>/10
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main
+      class="w-full max-w-md mx-auto px-4 flex-1 flex flex-col justify-center items-center pb-12"
+    >
+      <!-- Màn chọn màn chơi (Map Hub) -->
+      <div
+        id="map-screen"
+        class="w-full bg-slate-800/80 backdrop-blur border border-slate-700 p-6 rounded-3xl text-center shadow-2xl"
+      >
+        <h1
+          class="text-2xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400"
+        >
+          Toán Vui Lớp 2
+        </h1>
+        <p class="text-slate-400 text-sm mb-6">
+          100 bài toán (Cộng trừ phạm vi 100 & Nhân chia cơ bản)
+        </p>
+
+        <div id="level-grid" class="grid grid-cols-5 gap-3 mb-6">
+          <!-- Render 10 nút màn chơi bằng JS -->
+        </div>
+
+        <div class="text-xs text-slate-400">
+          💡 Vượt qua 7/10 câu để mở khóa màn kế tiếp!
+        </div>
+      </div>
+
+      <!-- Màn hình làm bài -->
+      <div id="quiz-screen" class="w-full hidden flex flex-col items-center">
+        <div
+          class="w-full bg-slate-800 border border-slate-700 rounded-3xl p-6 md:p-8 text-center shadow-2xl mb-6 relative"
+        >
+          <div
+            id="progress-text"
+            class="text-xs font-bold text-cyan-400 mb-2 uppercase tracking-wider"
+          >
+            Câu 1 / 10
+          </div>
+          <div
+            id="question-box"
+            class="text-xl md:text-2xl font-bold mb-6 min-h-[90px] flex items-center justify-center flex-wrap gap-2"
+          >
+            <!-- Nội dung câu hỏi -->
+          </div>
+          <div id="options-grid" class="grid grid-cols-2 gap-3 w-full">
+            <!-- Các lựa chọn đáp án -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Màn hoàn thành 1 màn -->
+      <div
+        id="complete-screen"
+        class="w-full hidden bg-slate-800 border border-slate-700 p-8 rounded-3xl text-center shadow-2xl"
+      >
+        <div class="text-5xl mb-3">🚀</div>
+        <h2
+          class="text-2xl font-extrabold mb-2 text-cyan-400"
+          id="complete-title"
+        >
+          Tuyệt Vời!
+        </h2>
+        <p class="text-slate-300 mb-6 text-sm" id="complete-desc">
+          Bé đã hoàn thành màn chơi này.
+        </p>
+
+        <div class="flex flex-col gap-3">
+          <button
+            onclick="nextLevel()"
+            id="next-btn"
+            class="w-full py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 rounded-2xl font-bold text-base transition shadow-lg"
+          >
+            Chơi Màn Tiếp Theo ➡️
+          </button>
+          <button
+            onclick="backToMap()"
+            class="w-full py-3.5 bg-slate-700 hover:bg-slate-600 rounded-2xl font-bold text-base transition border border-slate-600"
+          >
+            🗺️ Chọn Màn Khác
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="text-center py-4 text-slate-500 text-xs">
+      BON BOSS Hub - Toán Lớp 2
+    </footer>
+
+    <script>
+      let currentLevel = 1;
+      let unlockedLevel = parseInt(
+        localStorage.getItem("grade2_unlocked") || "1",
+      );
+      let currentQuestions = [];
+      let currentIndex = 0;
+      let correctCount = 0;
+
+      // Sinh 100 câu hỏi Lớp 2 qua 10 cấp độ
+      // Màn 1-3: Cộng trừ trong phạm vi 100 (có nhớ/không nhớ)
+      // Màn 4-6: Tìm X đơn giản & Dãy tính cộng trừ
+      // Màn 7-10: Bảng nhân chia 2, 5, 10 & Toán đố có lời văn ngắn
+      function generateGrade2Questions() {
+        let allLevels = [];
+        for (let lvl = 1; lvl <= 10; lvl++) {
+          let questions = [];
+          for (let i = 0; i < 10; i++) {
+            let q = {};
+            if (lvl <= 3) {
+              // Cộng trừ phạm vi 100
+              let isAdd = Math.random() < 0.5;
+              let a = Math.floor(Math.random() * 70) + 10;
+              let b = Math.floor(Math.random() * 25) + 5;
+              if (!isAdd && a < b) {
+                let tmp = a;
+                a = b;
+                b = tmp;
+              }
+              let ans = isAdd ? a + b : a - b;
+              q.text = `${a} ${isAdd ? "+" : "-"} ${b} = ?`;
+              q.correct = ans;
+            } else if (lvl <= 6) {
+              // Tìm X đơn giản (ví dụ: X + 15 = 45)
+              let x = Math.floor(Math.random() * 30) + 5;
+              let b = Math.floor(Math.random() * 20) + 5;
+              let isAdd = Math.random() < 0.5;
+              let total = isAdd ? x + b : x - b;
+              if (!isAdd) {
+                total = x + b; // X - b = total => X = total + b
+                q.text = `Tìm X biết:\nX - ${b} = ${total - b}`;
+                q.correct = total;
+              } else {
+                q.text = `Tìm X biết:\nX + ${b} = ${total}`;
+                q.correct = x;
+              }
+            } else if (lvl <= 8) {
+              // Bảng nhân 2, 5, 10
+              let table =
+                Math.random() < 0.5 ? 2 : Math.random() < 0.5 ? 5 : 10;
+              let multiplier = Math.floor(Math.random() * 9) + 1;
+              let ans = table * multiplier;
+              q.text = `${table} × ${multiplier} = ?`;
+              q.correct = ans;
+            } else {
+              // Toán đố lời văn ngắn gọn
+              let items = [
+                "quyển vở",
+                (chiếc = "cái kẹo"),
+                "viên bi",
+                "bông hoa",
+              ];
+              let item = items[Math.floor(Math.random() * items.length)];
+              let a = Math.floor(Math.random() * 15) + 10;
+              let b = Math.floor(Math.random() * 10) + 5;
+              let isAdd = Math.random() < 0.5;
+              let ans = isAdd ? a + b : a - b;
+              q.text = isAdd
+                ? `Lan có ${a} ${item}, mẹ cho thêm ${b} ${item}. Hỏi Lan có tất cả bao nhiêu ${item}?`
+                : `Hà có ${b} ${item}, Nam có ${a} ${item} (${a} > ${b}). Hỏi Nam có nhiều hơn Hà bao nhiêu ${item}?`;
+              q.correct = ans;
+            }
+
+            // Tạo 4 đáp án trắc nghiệm
+            let opts = [q.correct];
+            while (opts.length < 4) {
+              let offset =
+                (Math.floor(Math.random() * 4) + 1) *
+                (Math.random() < 0.5 ? 1 : -1);
+              let wrong = q.correct + offset;
+              if (wrong >= 0 && !opts.includes(wrong)) opts.push(wrong);
+            }
+            q.options = opts.sort(() => Math.random() - 0.5);
+            questions.push(q);
+          }
+          allLevels.push(questions);
+        }
+        return allLevels;
+      }
+
+      const questionBank = generateGrade2Questions();
+
+      function initMap() {
+        unlockedLevel = parseInt(
+          localStorage.getItem("grade2_unlocked") || "1",
+        );
+        const grid = document.getElementById("level-grid");
+        grid.innerHTML = "";
+        for (let i = 1; i <= 10; i++) {
+          let btn = document.createElement("button");
+          let isUnlocked = i <= unlockedLevel;
+          btn.className = `py-3.5 rounded-2xl font-extrabold text-sm transition border ${
+            isUnlocked
+              ? "bg-cyan-600 hover:bg-cyan-500 text-white border-cyan-500 shadow-md shadow-cyan-600/30 cursor-pointer"
+              : "bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed"
+          }`;
+          btn.innerHTML = isUnlocked ? `Màn ${i}` : `🔒 ${i}`;
+          if (isUnlocked) {
+            btn.onclick = () => startLevel(i);
+          }
+          grid.appendChild(btn);
+        }
+      }
+
+      function startLevel(lvl) {
+        currentLevel = lvl;
+        currentQuestions = questionBank[lvl - 1];
+        currentIndex = 0;
+        correctCount = 0;
+        document.getElementById("level-badge").innerText = `Màn ${lvl} / 10`;
+        document.getElementById("map-screen").classList.add("hidden");
+        document.getElementById("complete-screen").classList.add("hidden");
+        document.getElementById("quiz-screen").classList.remove("hidden");
+        loadQuestion();
+      }
+
+      function loadQuestion() {
+        if (currentIndex >= currentQuestions.length) {
+          finishLevel();
+          return;
+        }
+        document.getElementById("progress-text").innerText =
+          `Câu ${currentIndex + 1} / 10`;
+        let q = currentQuestions[currentIndex];
+        document.getElementById("question-box`".replace("`", "")).innerText =
+          q.text; // fix text render
+
+        let grid = document.getElementById("options-grid");
+        grid.innerHTML = "";
+        q.options.forEach((opt) => {
+          let btn = document.createElement("button");
+          btn.className =
+            "py-4 bg-slate-700 hover:bg-slate-600 active:scale-95 text-xl font-black rounded-2xl border border-slate-600 shadow transition";
+          btn.innerText = opt;
+          btn.onclick = () => checkAnswer(opt, q.correct);
+          grid.appendChild(btn);
+        });
+      }
+
+      function checkAnswer(selected, correct) {
+        if (selected === correct) {
+          correctCount++;
+          document.getElementById("score").innerText = correctCount;
+        }
+        currentIndex++;
+        loadQuestion();
+      }
+
+      function finishLevel() {
+        document.getElementById("quiz-screen").classList.add("hidden");
+        document.getElementById("complete-screen").classList.remove("hidden");
+
+        let title = document.getElementById("complete-title");
+        let desc = document.getElementById("complete-desc");
+        let nextBtn = document.getElementById("next-btn");
+
+        title.innerText =
+          correctCount >= 8 ? "🚀 Siêu Trí Tuệ!" : "👏 Hoàn Thành Tốt!";
+        desc.innerText = `Bé đạt kết quả ${correctCount} / 10 câu đúng ở màn ${currentLevel}.`;
+
+        if (
+          correctCount >= 7 &&
+          currentLevel >= unlockedLevel &&
+          currentLevel < 10
+        ) {
+          unlockedLevel = currentLevel + 1;
+          localStorage.setItem("grade2_unlocked", unlockedLevel);
+        }
+
+        if (currentLevel >= 10) {
+          nextBtn.style.display = "none";
+          desc.innerText +=
+            " Chúc mừng bé đã chinh phục toàn bộ chương trình Toán Lớp 2!";
+        } else {
+          nextBtn.style.display = "block";
+        }
+      }
+
+      function nextLevel() {
+        startLevel(currentLevel + 1);
+      }
+
+      function backToMap() {
+        document.getElementById("complete-screen").classList.add("hidden");
+        document.getElementById("quiz-screen").classList.add("hidden");
+        document.getElementById("map-screen").classList.remove("hidden");
+        initMap();
+      }
+
+      initMap();
+    </script>
+  </body>
+</html>

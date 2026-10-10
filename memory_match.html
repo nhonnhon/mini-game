@@ -9,6 +9,12 @@
     <title>Trò Chơi Lật Thẻ Trí Nhớ - Memory Match</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
       body {
         touch-action: manipulation;
         user-select: none;
@@ -39,58 +45,123 @@
       .animate-pop {
         animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
       }
+      .memory-grid {
+        display: grid;
+        box-sizing: border-box;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .memory-card {
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+      }
     </style>
   </head>
   <body
-    class="bg-gray-900 text-white min-h-[100dvh] flex flex-col justify-between p-3 select-none overflow-y-auto relative"
+    class="bg-gray-900 text-white h-[100dvh] max-h-[100dvh] flex flex-col p-2 md:p-3 select-none overflow-hidden relative"
   >
-    <!-- HEADER / THÔNG TIN TRÒ CHƠI -->
-    <div class="w-full max-w-md mx-auto flex-shrink-0">
-      <!-- BẢNG ĐIỂM, THỜI GIAN ĐẾM NGƯỢC & CẶP ĐÃ TÌM -->
-      <div
-        class="grid grid-cols-3 gap-2 bg-gray-800 p-2.5 rounded-2xl shadow-lg mb-2 text-center"
+    <!-- HEADER GỌN: quay lại + thời gian + cặp đã tìm + miss -->
+    <header
+      class="w-full max-w-6xl mx-auto flex items-center gap-2 flex-shrink-0 mb-1.5"
+    >
+      <a
+        href="index.html"
+        aria-label="Về trang chủ"
+        class="inline-flex items-center justify-center w-9 h-9 bg-gray-800 hover:bg-gray-700 active:scale-95 border border-gray-700 rounded-xl text-lg font-bold text-white shadow flex-shrink-0"
       >
-        <div>
-          <span class="text-gray-400 text-[10px] block">THỜI GIAN</span>
+        ←
+      </a>
+
+      <div
+        class="flex-1 min-w-0 flex items-center justify-between gap-2 bg-gray-800/80 border border-gray-700 rounded-xl px-2.5 py-1.5"
+      >
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-gray-500 text-[10px] uppercase tracking-wide"
+            >Time</span
+          >
           <span
             id="countdown-display"
-            class="text-lg font-mono text-red-400 font-bold"
+            class="text-base md:text-lg font-mono font-bold text-red-400 leading-none tabular-nums"
             >--</span
           >
         </div>
-        <div>
-          <span class="text-gray-400 text-[10px] block">ĐÃ TÌM ĐƯỢC</span>
+
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-gray-500 text-[10px] uppercase tracking-wide"
+            >Ghép</span
+          >
           <span
             id="matched-display"
-            class="text-xl font-mono text-green-400 font-black"
+            class="text-base md:text-lg font-mono font-black text-green-400 leading-none"
             >0 / 0</span
           >
         </div>
-        <div>
-          <span class="text-gray-400 text-[10px] block">LƯỢT LẬT SAI</span>
+
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-gray-500 text-[10px] uppercase tracking-wide"
+            >Sai</span
+          >
           <span
             id="miss-display"
-            class="text-lg font-mono text-yellow-400 font-bold"
+            class="text-sm md:text-base font-mono font-bold text-yellow-400 leading-none"
             >0</span
           >
         </div>
       </div>
-    </div>
+    </header>
 
-    <!-- KHUNG CHƠI GAME CHÍNH (LƯỚI THẺ BÀI) -->
+    <!-- KHUNG CHƠI -->
     <div
-      class="w-full max-w-md mx-auto flex-1 flex items-center justify-center relative overflow-hidden bg-gray-950 rounded-3xl border border-gray-800 p-3 my-1"
+      class="w-full max-w-6xl mx-auto flex-1 min-h-0 flex items-center justify-center relative overflow-hidden bg-gray-950 rounded-2xl border border-gray-800 p-1.5 md:p-3"
     >
       <div
         id="game-container"
-        class="w-full h-full flex items-center justify-center"
+        class="w-full h-full min-h-0 min-w-0 flex items-center justify-center overflow-hidden"
       >
         <div class="text-center text-gray-400 text-sm font-medium px-4">
-          Cài đặt số cặp và thời gian bên dưới, sau đó bấm
-          <span class="text-green-400 font-bold">"Bắt Đầu"</span> để lật thẻ!
+          Chọn cặp & thời gian ở thanh dưới, bấm
+          <span class="text-green-400 font-bold">"Chơi"</span> để bắt đầu
         </div>
       </div>
     </div>
+
+    <!-- THANH SETUP NHỎ Ở DƯỚI -->
+    <footer
+      class="w-full max-w-6xl mx-auto flex-shrink-0 mt-1.5 flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-xl px-2.5 py-1.5 text-[11px] text-gray-400"
+    >
+      <span class="font-semibold flex-shrink-0">Cặp</span>
+      <input
+        type="number"
+        id="pairs-input"
+        min="4"
+        max="18"
+        value="10"
+        class="w-12 bg-gray-700 text-white text-center px-1 py-1 rounded-lg text-sm font-bold border border-gray-600 focus:outline-none focus:border-blue-500"
+      />
+      <span class="font-semibold flex-shrink-0">Giây</span>
+      <input
+        type="number"
+        id="time-input"
+        min="10"
+        max="180"
+        value="60"
+        class="w-14 bg-gray-700 text-white text-center px-1 py-1 rounded-lg text-sm font-bold border border-gray-600 focus:outline-none focus:border-blue-500"
+      />
+      <div class="flex-1"></div>
+      <button
+        onclick="resetToIdle()"
+        class="bg-gray-700 hover:bg-gray-600 active:scale-95 px-2.5 py-1.5 rounded-lg font-bold text-xs text-white"
+      >
+        Reset
+      </button>
+      <button
+        onclick="startGame()"
+        class="bg-green-600 hover:bg-green-500 active:scale-95 px-3.5 py-1.5 rounded-lg font-bold text-xs text-white shadow"
+      >
+        Chơi
+      </button>
+    </footer>
 
     <!-- MÀN HÌNH KẾT THÚC (THẮNG / THUA) -->
     <div
@@ -98,7 +169,7 @@
       class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden"
     >
       <div
-        class="bg-gray-800 border border-gray-700 w-full max-w-xs p-6 rounded-3xl text-center shadow-2xl animate-pop"
+        class="bg-gray-800 border border-gray-700 w-full max-w-xs md:max-w-sm p-6 rounded-3xl text-center shadow-2xl animate-pop"
       >
         <div id="modal-icon" class="text-5xl mb-3">🎉</div>
         <h2 id="modal-title" class="text-2xl font-black text-yellow-400 mb-1">
@@ -128,48 +199,6 @@
           class="w-full bg-gradient-to-r from-purple-600 to-pink-600 active:scale-95 transition-all py-3 rounded-xl font-bold text-base text-white shadow-lg"
         >
           Chơi Ván Mới
-        </button>
-      </div>
-    </div>
-
-    <!-- FOOTER / CẤU HÌNH (SỐ CẶP N & THỜI GIAN GIÂY) -->
-    <div
-      class="w-full max-w-md mx-auto flex items-center justify-between gap-1.5 text-gray-500 text-[11px] flex-shrink-0 bg-gray-800 p-2.5 rounded-2xl"
-    >
-      <div class="flex items-center gap-1">
-        <span>Cặp N:</span>
-        <input
-          type="number"
-          id="pairs-input"
-          min="4"
-          max="18"
-          value="10"
-          class="w-11 bg-gray-700 text-white text-center px-1 py-1 rounded-lg text-xs font-bold focus:outline-none"
-        />
-      </div>
-      <div class="flex items-center gap-1">
-        <span>Giây:</span>
-        <input
-          type="number"
-          id="time-input"
-          min="10"
-          max="180"
-          value="60"
-          class="w-12 bg-gray-700 text-white text-center px-1 py-1 rounded-lg text-xs font-bold focus:outline-none"
-        />
-      </div>
-      <div class="flex gap-1">
-        <button
-          onclick="startGame()"
-          class="bg-green-600 hover:bg-green-500 active:scale-95 px-3 py-1.5 rounded-xl font-bold text-xs text-white shadow"
-        >
-          Bắt Đầu
-        </button>
-        <button
-          onclick="resetToIdle()"
-          class="bg-gray-700 hover:bg-gray-600 active:scale-95 px-2.5 py-1.5 rounded-xl font-bold text-xs text-white"
-        >
-          Làm Lại
         </button>
       </div>
     </div>
@@ -232,7 +261,7 @@
         const container = document.getElementById("game-container");
         container.innerHTML = `
                 <div class="text-center text-gray-400 text-sm font-medium px-4">
-                    Chọn số cặp thẻ và thời gian, sau đó bấm <span class="text-green-400 font-bold">"Bắt Đầu"</span> để chơi!
+                    Chọn cặp & thời gian ở thanh dưới, bấm <span class="text-green-400 font-bold">"Chơi"</span> để bắt đầu
                 </div>
             `;
       }
@@ -270,42 +299,80 @@
         startCountdown();
       }
 
+      function bestGridLayout(total, availW, availH, gap) {
+        let best = { cols: 1, rows: total, cell: 0 };
+        for (let cols = 1; cols <= total; cols++) {
+          const rows = Math.ceil(total / cols);
+          const cellW = (availW - gap * (cols - 1)) / cols;
+          const cellH = (availH - gap * (rows - 1)) / rows;
+          const cell = Math.min(cellW, cellH);
+          if (cell > best.cell) {
+            best = { cols, rows, cell };
+          }
+        }
+        return best;
+      }
+
+      function fitMemoryGrid(grid) {
+        const container = document.getElementById("game-container");
+        if (!grid || !container || totalCards <= 0) return;
+
+        const availW = Math.max(0, container.clientWidth);
+        const availH = Math.max(0, container.clientHeight);
+        const gap = totalCards > 28 ? 3 : totalCards > 20 ? 4 : totalCards > 12 ? 6 : 8;
+        const layout = bestGridLayout(totalCards, availW, availH, gap);
+
+        const width = layout.cols * layout.cell + gap * (layout.cols - 1);
+        const height = layout.rows * layout.cell + gap * (layout.rows - 1);
+
+        grid.style.width = Math.floor(width) + "px";
+        grid.style.height = Math.floor(height) + "px";
+        grid.style.gap = gap + "px";
+        grid.style.gridTemplateColumns = `repeat(${layout.cols}, minmax(0, 1fr))`;
+        grid.style.gridTemplateRows = `repeat(${layout.rows}, minmax(0, 1fr))`;
+
+        const emojiSize = Math.max(12, Math.min(42, layout.cell * 0.48));
+        const markSize = Math.max(10, Math.min(28, layout.cell * 0.32));
+        const radius = Math.max(6, Math.min(14, layout.cell * 0.14));
+
+        grid.querySelectorAll(".card-face-back").forEach((el) => {
+          el.style.fontSize = markSize + "px";
+          el.style.borderRadius = radius + "px";
+        });
+        grid.querySelectorAll(".card-face-front").forEach((el) => {
+          el.style.fontSize = emojiSize + "px";
+          el.style.borderRadius = radius + "px";
+        });
+        grid.querySelectorAll(".card-inner").forEach((el) => {
+          el.style.borderRadius = radius + "px";
+        });
+      }
+
       function renderCardsBoard() {
         const container = document.getElementById("game-container");
         container.innerHTML = "";
 
-        // Chọn ngẫu nhiên emoji từ kho
         let shuffledEmojis = [...emojiPool].sort(() => Math.random() - 0.5);
         let selectedEmojis = shuffledEmojis.slice(0, numPairs);
-
-        // Nhân đôi để tạo thành các cặp
         let cardDeck = [...selectedEmojis, ...selectedEmojis];
-        // Xáo trộn vị trí thẻ bài
         cardDeck.sort(() => Math.random() - 0.5);
 
-        // Tự động tính số cột và hàng tối ưu cho lưới bài
-        let cols = totalCards <= 12 ? 4 : totalCards <= 20 ? 5 : 6;
-        if (totalCards === 26) cols = 6; // ví dụ 13 cặp = 26 thẻ -> 6 cột x 5 hàng (dư 4 ô)
-
         const grid = document.createElement("div");
-        grid.className =
-          "w-full h-full grid gap-2 p-1 items-center justify-center overflow-auto";
-        grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+        grid.id = "memory-grid";
+        grid.className = "memory-grid";
 
-        cardDeck.forEach((emoji, index) => {
+        cardDeck.forEach((emoji) => {
           const card = document.createElement("div");
           card.className =
-            "w-full aspect-square perspective-1000 cursor-pointer animate-pop";
+            "memory-card w-full h-full perspective-1000 cursor-pointer animate-pop";
           card.dataset.emoji = emoji;
 
           card.innerHTML = `
-                    <div class="relative w-full h-full duration-300 transform-style-3d card-inner rounded-xl shadow-md">
-                        <!-- MẶT SAU (LÚC ÚP) -->
-                        <div class="absolute inset-0 w-full h-full bg-gray-800 border border-gray-700 rounded-xl flex items-center justify-center text-lg font-bold text-purple-400 backface-hidden shadow-inner hover:bg-gray-700 transition-colors">
+                    <div class="relative w-full h-full duration-300 transform-style-3d card-inner shadow-md">
+                        <div class="card-face-back absolute inset-0 w-full h-full bg-gray-800 border border-gray-700 flex items-center justify-center font-bold text-purple-400 backface-hidden shadow-inner hover:bg-gray-700 transition-colors">
                             ❓
                         </div>
-                        <!-- MẶT TRƯỚC (LÚC LẬT EMOJI) -->
-                        <div class="absolute inset-0 w-full h-full bg-gray-700 border border-gray-600 rounded-xl flex items-center justify-center text-2xl sm:text-3xl rotate-y-180 backface-hidden shadow-inner">
+                        <div class="card-face-front absolute inset-0 w-full h-full bg-gray-700 border border-gray-600 flex items-center justify-center rotate-y-180 backface-hidden shadow-inner">
                             ${emoji}
                         </div>
                     </div>
@@ -316,6 +383,8 @@
         });
 
         container.appendChild(grid);
+        fitMemoryGrid(grid);
+        requestAnimationFrame(() => fitMemoryGrid(grid));
       }
 
       function startCountdown() {
@@ -434,6 +503,10 @@
         document.getElementById("final-miss").innerText = missCount;
         document.getElementById("gameover-modal").classList.remove("hidden");
       }
+
+      window.addEventListener("resize", () => {
+        fitMemoryGrid(document.getElementById("memory-grid"));
+      });
 
       window.onload = () => {
         resetToIdle();

@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Xếp Số - BON BOSS Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      body {
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .tile-num {
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-slate-900 text-white h-[100dvh] max-h-[100dvh] flex flex-col p-2 md:p-3 select-none overflow-hidden"
+  >
+    <header
+      class="w-full max-w-6xl mx-auto flex items-center gap-2 flex-shrink-0 mb-1.5"
+    >
+      <a
+        href="index.html"
+        aria-label="Về trang chủ"
+        class="inline-flex items-center justify-center w-9 h-9 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 rounded-xl text-lg font-bold shadow flex-shrink-0"
+        >←</a
+      >
+      <div
+        class="flex-1 min-w-0 flex items-center justify-between gap-2 bg-slate-800/80 border border-slate-700 rounded-xl px-2.5 py-1.5"
+      >
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-slate-400 text-[10px] uppercase">Bước</span>
+          <span id="steps" class="text-lg font-black text-cyan-300">0</span>
+        </div>
+        <div class="text-xs text-slate-100 font-semibold truncate">Xếp Số</div>
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-slate-400 text-[10px] uppercase">Lưới</span>
+          <span id="grid-label" class="text-lg font-black text-amber-300"
+            >3×3</span
+          >
+        </div>
+      </div>
+    </header>
+
+    <main
+      class="w-full max-w-6xl mx-auto flex-1 min-h-0 flex flex-col items-center justify-center overflow-hidden"
+    >
+      <!-- Màn chọn -->
+      <div
+        id="mode-screen"
+        class="w-full max-w-md bg-slate-800/90 border border-slate-700 p-5 md:p-7 rounded-3xl text-center"
+      >
+        <h1 class="text-2xl md:text-3xl font-black text-cyan-300 mb-1">
+          Xếp Số
+        </h1>
+        <p class="text-slate-400 text-sm mb-5">
+          Trượt các số về đúng thứ tự từ nhỏ đến lớn
+        </p>
+
+        <label class="text-sm font-medium text-slate-300 block mb-2 text-left"
+          >Độ khó:</label
+        >
+        <div class="grid grid-cols-2 gap-3 mb-5">
+          <button
+            onclick="setGridSize(2)"
+            id="btn-grid-2"
+            class="py-3 bg-slate-700 hover:bg-slate-600 rounded-2xl font-bold border border-slate-600"
+          >
+            2 × 2
+          </button>
+          <button
+            onclick="setGridSize(3)"
+            id="btn-grid-3"
+            class="py-3 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-bold border border-indigo-500 shadow-lg shadow-indigo-600/30"
+          >
+            3 × 3
+          </button>
+        </div>
+
+        <button
+          onclick="startGame()"
+          class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 rounded-2xl font-bold text-base shadow"
+        >
+          Bắt Đầu
+        </button>
+      </div>
+
+      <!-- Màn chơi -->
+      <div
+        id="game-screen"
+        class="hidden w-full h-full max-w-lg flex flex-col items-center justify-center gap-3 min-h-0"
+      >
+        <p class="text-slate-400 text-xs md:text-sm font-semibold flex-shrink-0">
+          Thứ tự đúng:
+          <span id="order-hint" class="text-slate-200">1 → 2 → 3 …</span>
+        </p>
+
+        <div
+          id="puzzle-board"
+          class="grid gap-2 w-full max-w-[min(100%,70vmin)] aspect-square bg-slate-800 p-2 md:p-3 rounded-3xl border border-slate-700 shadow-2xl flex-shrink min-h-0"
+        ></div>
+
+        <div class="flex gap-2 w-full max-w-[min(100%,70vmin)] flex-shrink-0">
+          <button
+            onclick="shufflePuzzle()"
+            class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-sm border border-slate-600"
+          >
+            Trộn lại
+          </button>
+          <button
+            onclick="backToMenu()"
+            class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-rose-300 rounded-xl font-bold text-sm border border-slate-700"
+          >
+            Đổi độ khó
+          </button>
+        </div>
+      </div>
+
+      <!-- Thắng -->
+      <div
+        id="win-screen"
+        class="hidden w-full max-w-md bg-slate-800/95 border border-slate-700 p-6 md:p-8 rounded-3xl text-center"
+      >
+        <h2 class="text-2xl md:text-3xl font-black text-emerald-400 mb-2">
+          Xong rồi!
+        </h2>
+        <p class="text-slate-300 text-sm mb-1">Số bước:</p>
+        <div class="text-5xl font-black text-amber-400 mb-6">
+          <span id="final-steps">0</span>
+        </div>
+        <div class="flex flex-col gap-2">
+          <button
+            onclick="startGame()"
+            class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 rounded-2xl font-bold"
+          >
+            Chơi lại
+          </button>
+          <button
+            onclick="backToMenu()"
+            class="w-full py-3.5 bg-slate-700 hover:bg-slate-600 rounded-2xl font-bold border border-slate-600"
+          >
+            Về menu
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      let N = 3;
+      let board = [];
+      let emptyPos = { r: 0, c: 0 };
+      let steps = 0;
+      let gameActive = false;
+
+      function setGridSize(size) {
+        N = size;
+        const active =
+          "py-3 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-bold border border-indigo-500 shadow-lg shadow-indigo-600/30";
+        const idle =
+          "py-3 bg-slate-700 hover:bg-slate-600 rounded-2xl font-bold border border-slate-600";
+        document.getElementById("btn-grid-2").className =
+          size === 2 ? active : idle;
+        document.getElementById("btn-grid-3").className =
+          size === 3 ? active : idle;
+      }
+
+      function startGame() {
+        steps = 0;
+        document.getElementById("steps").innerText = "0";
+        document.getElementById("grid-label").innerText = N + "×" + N;
+
+        const nums = [];
+        for (let i = 1; i < N * N; i++) nums.push(i);
+        document.getElementById("order-hint").innerText =
+          nums.join(" → ") + " → (trống)";
+
+        board = [];
+        let count = 0;
+        for (let r = 0; r < N; r++) {
+          const row = [];
+          for (let c = 0; c < N; c++) row.push(count++);
+          board.push(row);
+        }
+        emptyPos = { r: N - 1, c: N - 1 };
+
+        shufflePuzzleSteps();
+        gameActive = true;
+
+        document.getElementById("mode-screen").classList.add("hidden");
+        document.getElementById("win-screen").classList.add("hidden");
+        document.getElementById("game-screen").classList.remove("hidden");
+        renderBoard();
+      }
+
+      function shufflePuzzleSteps() {
+        const moves = [
+          { r: -1, c: 0 },
+          { r: 1, c: 0 },
+          { r: 0, c: -1 },
+          { r: 0, c: 1 },
+        ];
+        const shuffleCount = N === 2 ? 50 : 150;
+
+        for (let i = 0; i < shuffleCount; i++) {
+          const valid = [];
+          moves.forEach((m) => {
+            const nr = emptyPos.r + m.r;
+            const nc = emptyPos.c + m.c;
+            if (nr >= 0 && nr < N && nc >= 0 && nc < N) {
+              valid.push({ r: nr, c: nc });
+            }
+          });
+          if (!valid.length) continue;
+          const pick = valid[Math.floor(Math.random() * valid.length)];
+          board[emptyPos.r][emptyPos.c] = board[pick.r][pick.c];
+          board[pick.r][pick.c] = N * N - 1;
+          emptyPos = pick;
+        }
+      }
+
+      function shufflePuzzle() {
+        shufflePuzzleSteps();
+        steps = 0;
+        document.getElementById("steps").innerText = "0";
+        gameActive = true;
+        renderBoard();
+      }
+
+      function renderBoard() {
+        const boardEl = document.getElementById("puzzle-board");
+        boardEl.style.gridTemplateColumns = `repeat(${N}, minmax(0, 1fr))`;
+        boardEl.innerHTML = "";
+
+        const fontSize = N === 2 ? "text-6xl md:text-7xl" : "text-5xl md:text-6xl";
+
+        for (let r = 0; r < N; r++) {
+          for (let c = 0; c < N; c++) {
+            const val = board[r][c];
+            const tile = document.createElement("button");
+
+            if (val === N * N - 1) {
+              tile.className =
+                "rounded-2xl border-2 border-dashed border-slate-600 bg-slate-900/50";
+              tile.disabled = true;
+            } else {
+              tile.className = `tile-num ${fontSize} font-black rounded-2xl bg-gradient-to-br from-cyan-500 to-indigo-600 text-white shadow-md active:scale-95 transition border border-white/20 flex items-center justify-center`;
+              tile.innerText = String(val + 1);
+              tile.onclick = () => handleTileClick(r, c);
+            }
+            boardEl.appendChild(tile);
+          }
+        }
+      }
+
+      function handleTileClick(r, c) {
+        if (!gameActive) return;
+        const adjacent =
+          Math.abs(r - emptyPos.r) + Math.abs(c - emptyPos.c) === 1;
+        if (!adjacent) return;
+
+        board[emptyPos.r][emptyPos.c] = board[r][c];
+        board[r][c] = N * N - 1;
+        emptyPos = { r, c };
+        steps++;
+        document.getElementById("steps").innerText = steps;
+        renderBoard();
+        checkWin();
+      }
+
+      function checkWin() {
+        let count = 0;
+        for (let r = 0; r < N; r++) {
+          for (let c = 0; c < N; c++) {
+            if (board[r][c] !== count++) return;
+          }
+        }
+        gameActive = false;
+        document.getElementById("final-steps").innerText = steps;
+        document.getElementById("game-screen").classList.add("hidden");
+        document.getElementById("win-screen").classList.remove("hidden");
+      }
+
+      function backToMenu() {
+        document.getElementById("game-screen").classList.add("hidden");
+        document.getElementById("win-screen").classList.add("hidden");
+        document.getElementById("mode-screen").classList.remove("hidden");
+      }
+
+      window.onload = () => setGridSize(3);
+    </script>
+  </body>
+</html>
