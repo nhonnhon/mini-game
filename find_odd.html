@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Tìm Hình Khác Biệt - BON BOSS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      body {
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(0.6);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .animate-pop {
+        animation: pop 0.18s ease-out forwards;
+      }
+      .odd-grid {
+        display: grid;
+        box-sizing: border-box;
+        overflow: hidden;
+      }
+      .odd-cell {
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        line-height: 1;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-violet-950 text-white h-[100dvh] max-h-[100dvh] flex flex-col p-2 md:p-3 select-none overflow-hidden"
+  >
+    <header
+      class="w-full max-w-6xl mx-auto flex items-center gap-2 flex-shrink-0 mb-1.5"
+    >
+      <a
+        href="index.html"
+        aria-label="Về trang chủ"
+        class="inline-flex items-center justify-center w-9 h-9 bg-violet-900 hover:bg-violet-800 active:scale-95 border border-violet-700 rounded-xl text-lg font-bold shadow flex-shrink-0"
+        >←</a
+      >
+      <div
+        class="flex-1 min-w-0 flex items-center justify-between gap-2 bg-violet-900/80 border border-violet-700 rounded-xl px-2.5 py-1.5"
+      >
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-violet-300 text-[10px] uppercase">Điểm</span>
+          <span id="score" class="text-lg font-black text-yellow-300">0</span>
+        </div>
+        <div class="text-xs text-violet-100 font-semibold truncate">
+          Tìm Hình Khác
+        </div>
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-violet-300 text-[10px] uppercase">Vòng</span>
+          <span id="round" class="text-lg font-black text-emerald-300">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main
+      class="w-full max-w-6xl mx-auto flex-1 min-h-0 flex items-center justify-center overflow-hidden bg-violet-950/60 rounded-2xl border border-violet-800 p-1.5 md:p-3"
+    >
+      <div
+        id="game-container"
+        class="w-full h-full min-h-0 min-w-0 flex items-center justify-center overflow-hidden"
+      ></div>
+    </main>
+
+    <footer
+      class="w-full max-w-6xl mx-auto flex-shrink-0 mt-1.5 flex items-center gap-2 bg-violet-900 border border-violet-700 rounded-xl px-2.5 py-1.5 text-[11px] text-violet-200"
+    >
+      <span class="font-semibold">Lưới N</span>
+      <input
+        id="grid-size"
+        type="number"
+        min="10"
+        max="20"
+        value="10"
+        class="w-14 bg-violet-800 text-white text-center px-1 py-1 rounded-lg text-xs font-bold border border-violet-600"
+      />
+      <span class="text-violet-400 text-[10px]">10–20</span>
+      <div class="flex-1"></div>
+      <button
+        onclick="startGame()"
+        class="bg-emerald-500 hover:bg-emerald-400 active:scale-95 px-3.5 py-1.5 rounded-lg font-bold text-xs text-white shadow"
+      >
+        Chơi
+      </button>
+    </footer>
+
+    <script>
+      const pairs = [
+        ["🍎", "🍏"],
+        ["🐶", "🐱"],
+        ["⭐", "🌙"],
+        ["🚗", "🚕"],
+        ["🌸", "🌻"],
+        ["🐟", "🐠"],
+        ["⚽", "🏀"],
+        ["😀", "😎"],
+      ];
+      let score = 0;
+      let round = 0;
+      let oddIndex = -1;
+      let playing = false;
+      let N = 10;
+
+      function fitGrid(grid) {
+        const container = document.getElementById("game-container");
+        if (!grid || !container) return;
+        const gap = N >= 16 ? 1 : N >= 12 ? 2 : 3;
+        const size = Math.max(
+          0,
+          Math.floor(Math.min(container.clientWidth, container.clientHeight)),
+        );
+        grid.style.width = size + "px";
+        grid.style.height = size + "px";
+        grid.style.gap = gap + "px";
+        grid.style.gridTemplateColumns = `repeat(${N}, minmax(0, 1fr))`;
+        grid.style.gridTemplateRows = `repeat(${N}, minmax(0, 1fr))`;
+        const cell = (size - gap * (N - 1)) / N;
+        const font = Math.max(8, Math.min(28, cell * 0.55));
+        const radius = Math.max(2, Math.min(8, cell * 0.15));
+        grid.querySelectorAll(".odd-cell").forEach((el) => {
+          el.style.fontSize = font + "px";
+          el.style.borderRadius = radius + "px";
+        });
+      }
+
+      function startGame() {
+        score = 0;
+        round = 0;
+        playing = true;
+        document.getElementById("score").innerText = "0";
+        document.getElementById("round").innerText = "0";
+        nextRound();
+      }
+
+      function nextRound() {
+        if (!playing) return;
+        round++;
+        document.getElementById("round").innerText = round;
+        const input = document.getElementById("grid-size");
+        N = parseInt(input.value) || 10;
+        if (N < 10) N = 10;
+        if (N > 20) N = 20;
+        input.value = N;
+
+        const total = N * N;
+        oddIndex = Math.floor(Math.random() * total);
+        const [normal, odd] = pairs[Math.floor(Math.random() * pairs.length)];
+
+        const container = document.getElementById("game-container");
+        container.innerHTML = "";
+        const grid = document.createElement("div");
+        grid.id = "odd-grid";
+        grid.className = "odd-grid";
+
+        for (let i = 0; i < total; i++) {
+          const cell = document.createElement("button");
+          cell.className =
+            "odd-cell w-full h-full bg-violet-900 border border-violet-700 flex items-center justify-center shadow-sm active:scale-95";
+          cell.innerText = i === oddIndex ? odd : normal;
+          cell.onclick = () => pick(i, cell);
+          grid.appendChild(cell);
+        }
+
+        container.appendChild(grid);
+        fitGrid(grid);
+        requestAnimationFrame(() => fitGrid(grid));
+      }
+
+      function pick(i, cell) {
+        if (!playing) return;
+        if (i === oddIndex) {
+          score++;
+          document.getElementById("score").innerText = score;
+          cell.classList.add("bg-emerald-500");
+          setTimeout(nextRound, 350);
+        } else {
+          if (navigator.vibrate) navigator.vibrate(80);
+          cell.classList.add("bg-rose-600");
+          setTimeout(() => cell.classList.remove("bg-rose-600"), 250);
+        }
+      }
+
+      window.addEventListener("resize", () =>
+        fitGrid(document.getElementById("odd-grid")),
+      );
+      window.onload = startGame;
+    </script>
+  </body>
+</html>

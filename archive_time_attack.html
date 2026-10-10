@@ -27,72 +27,144 @@
       .animate-pop {
         animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
       }
+      .board-grid {
+        width: min(100%, 100cqmin);
+        height: min(100%, 100cqmin);
+        max-width: min(100%, 92vmin);
+        max-height: min(100%, 92vmin);
+      }
+      @media (min-width: 768px) {
+        .board-grid {
+          max-width: min(100%, 72vmin);
+          max-height: min(100%, 72vmin);
+        }
+      }
+      @media (orientation: landscape) and (min-width: 768px) {
+        .board-grid {
+          max-width: min(100%, 88vh);
+          max-height: min(100%, 88vh);
+        }
+      }
+      .board-stage {
+        container-type: size;
+      }
+      @media (orientation: landscape) and (min-width: 768px) {
+        .layout-main {
+          flex-direction: row;
+          align-items: stretch;
+        }
+        .layout-side {
+          width: 18rem;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        .layout-tip-side {
+          display: block;
+        }
+        .layout-tip-bottom {
+          display: none;
+        }
+      }
+      @media (orientation: landscape) and (min-width: 1024px) {
+        .layout-side {
+          width: 20rem;
+        }
+      }
     </style>
   </head>
   <body
-    class="bg-gray-900 text-white h-screen flex flex-col justify-between p-3 select-none overflow-hidden relative"
+    class="bg-gray-900 text-white h-[100dvh] flex flex-col p-3 md:p-4 select-none overflow-hidden relative"
   >
-    <!-- HEADER / THÔNG TIN TRÒ CHƠI -->
-    <div class="w-full max-w-md mx-auto flex-shrink-0">
-      <!-- Ô HIỂN THỊ SỐ CẦN TÌM -->
-      <div
-        class="bg-gray-900 text-white min-h-[100dvh] flex flex-col justify-between p-3 select-none overflow-y-auto"
+    <!-- THANH ĐIỀU HƯỚNG -->
+    <div
+      class="w-full max-w-6xl mx-auto flex items-center gap-3 flex-shrink-0 mb-2"
+    >
+      <a
+        href="index.html"
+        class="inline-flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 active:scale-95 border border-gray-700 px-3 py-2 rounded-xl text-sm font-bold text-white shadow"
       >
-        <span class="text-gray-400 text-xs block mb-1"
-          >CẦN TÌM NHANH SỐ NÀY</span
-        >
-        <div
-          id="required-num"
-          class="text-4xl font-black text-yellow-400 animate-bounce"
-        >
-          --
+        <span aria-hidden="true">←</span> Trang chủ
+      </a>
+      <div class="min-w-0">
+        <div class="text-sm md:text-base font-bold text-amber-400 truncate">
+          Săn Số 5 Giây
         </div>
-
-        <!-- THANH BAR PROCESS KÉO NGƯỢC (10 GIÂY) -->
-        <div class="w-full bg-gray-700 h-2 rounded-full mt-3 overflow-hidden">
-          <div
-            id="progress-bar"
-            class="bg-gradient-to-r from-green-500 to-yellow-500 h-full w-full transition-all duration-100"
-          ></div>
+        <div class="text-[10px] md:text-xs text-gray-500 truncate">
+          Tìm số ngẫu nhiên trước khi hết giờ
         </div>
-      </div>
-
-      <!-- CẤU HÌNH & NÚT ĐIỀU KHIỂN -->
-      <div
-        class="bg-gray-800 p-2.5 rounded-2xl shadow-lg flex items-center gap-2"
-      >
-        <div class="flex-1">
-          <label class="block text-gray-400 text-[10px] font-semibold mb-1"
-            >NHẬP SỐ HÀNG N (VD: 8=8x8, 10=10x10):</label
-          >
-          <input
-            type="number"
-            id="grid-n-input"
-            min="3"
-            max="10"
-            value="8"
-            class="w-full bg-gray-700 text-white px-3 py-1.5 rounded-xl text-sm font-bold border border-gray-600 focus:outline-none focus:border-blue-500"
-          />
-        </div>
-        <button
-          onclick="startGame()"
-          class="bg-gradient-to-r from-red-600 to-amber-600 active:scale-95 transition-transform px-4 py-2.5 rounded-xl font-bold text-xs shadow text-white mt-4"
-        >
-          Tạo Lại Lưới
-        </button>
       </div>
     </div>
 
-    <!-- KHUNG CHƠI GAME CHÍNH -->
     <div
-      class="w-full max-w-md mx-auto flex-1 flex items-center justify-center relative overflow-hidden bg-gray-950 rounded-3xl border border-gray-800 p-3 my-2"
+      class="layout-main w-full max-w-6xl mx-auto flex-1 min-h-0 flex flex-col gap-2 md:gap-3"
     >
+      <!-- CỘT ĐIỀU KHIỂN -->
+      <div class="layout-side w-full flex-shrink-0 space-y-2">
+        <div
+          class="bg-gray-800 p-3 md:p-4 rounded-2xl shadow-lg text-center relative overflow-hidden"
+        >
+          <span class="text-gray-400 text-xs md:text-sm block mb-1"
+            >CẦN TÌM NHANH SỐ NÀY</span
+          >
+          <div
+            id="required-num"
+            class="text-4xl md:text-5xl font-black text-yellow-400 animate-bounce"
+          >
+            --
+          </div>
+
+          <div class="w-full bg-gray-700 h-2 rounded-full mt-3 overflow-hidden">
+            <div
+              id="progress-bar"
+              class="bg-gradient-to-r from-green-500 to-yellow-500 h-full w-full transition-all duration-100"
+            ></div>
+          </div>
+        </div>
+
+        <div
+          class="bg-gray-800 p-2.5 md:p-3 rounded-2xl shadow-lg flex items-center gap-2"
+        >
+          <div class="flex-1">
+            <label
+              class="block text-gray-400 text-[10px] md:text-xs font-semibold mb-1"
+              >NHẬP SỐ HÀNG N (VD: 8=8x8, 10=10x10):</label
+            >
+            <input
+              type="number"
+              id="grid-n-input"
+              min="3"
+              max="10"
+              value="8"
+              class="w-full bg-gray-700 text-white px-3 py-1.5 md:py-2 rounded-xl text-sm md:text-base font-bold border border-gray-600 focus:outline-none focus:border-blue-500"
+            />
+          </div>
+          <button
+            onclick="startGame()"
+            class="bg-gradient-to-r from-red-600 to-amber-600 active:scale-95 transition-transform px-4 py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm shadow text-white mt-4"
+          >
+            Tạo Lại Lưới
+          </button>
+        </div>
+
+        <div
+          class="layout-tip-side hidden text-center text-gray-500 text-[11px] md:text-xs px-1"
+        >
+          Thử thách 5 giây • Hết giờ tự động đổi số & random lại vị trí
+        </div>
+      </div>
+
+      <!-- KHUNG CHƠI -->
       <div
-        id="game-container"
-        class="w-full h-full flex items-center justify-center"
+        class="board-stage w-full flex-1 min-h-0 flex items-center justify-center relative overflow-hidden bg-gray-950 rounded-3xl border border-gray-800 p-2 md:p-4"
       >
-        <div class="text-center text-gray-500 text-sm">
-          Đang tải bàn chơi...
+        <div
+          id="game-container"
+          class="w-full h-full flex items-center justify-center"
+        >
+          <div class="text-center text-gray-500 text-sm">
+            Đang tải bàn chơi...
+          </div>
         </div>
       </div>
     </div>
@@ -103,7 +175,7 @@
       class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden"
     >
       <div
-        class="bg-gray-800 border border-gray-700 w-full max-w-xs p-6 rounded-3xl text-center shadow-2xl animate-pop"
+        class="bg-gray-800 border border-gray-700 w-full max-w-xs md:max-w-sm p-6 rounded-3xl text-center shadow-2xl animate-pop"
       >
         <div class="text-5xl mb-3">🎉</div>
         <h2 class="text-2xl font-black text-yellow-400 mb-1">XUẤT SẮC!</h2>
@@ -119,11 +191,10 @@
       </div>
     </div>
 
-    <!-- FOOTER -->
     <div
-      class="w-full max-w-md mx-auto text-center text-gray-500 text-[11px] flex-shrink-0"
+      class="layout-tip-bottom w-full max-w-6xl mx-auto text-center text-gray-500 text-[11px] flex-shrink-0 mt-2"
     >
-      Thử Thách 10 Giây • Hết giờ tự động đổi số & random lại vị trí
+      Thử thách 5 giây • Hết giờ tự động đổi số & random lại vị trí
     </div>
 
     <script>
@@ -169,13 +240,16 @@
 
         const gridWrapper = document.createElement("div");
         gridWrapper.className =
-          "w-full h-full grid gap-1 p-1 items-center justify-center aspect-square max-w-[450px] max-h-[450px]";
+          "board-grid grid gap-1 md:gap-1.5 p-1 items-center justify-center";
         gridWrapper.style.gridTemplateColumns = `repeat(${N}, minmax(0, 1fr))`;
         gridWrapper.style.gridTemplateRows = `repeat(${N}, minmax(0, 1fr))`;
 
         numbersList.forEach((num) => {
           const item = document.createElement("div");
-          let textSize = N > 8 ? "text-xs" : "text-sm";
+          let textSize =
+            N > 8
+              ? "text-[11px] sm:text-xs md:text-sm"
+              : "text-sm md:text-base lg:text-lg";
 
           item.className = `w-full h-full bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center font-bold ${textSize} text-yellow-300 shadow cursor-pointer active:scale-95 transition-all animate-pop aspect-square`;
           item.innerText = num;

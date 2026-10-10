@@ -9,6 +9,12 @@
     <title>Săn Số Lưới Vuông NxN - Highscore</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
       body {
         touch-action: manipulation;
         user-select: none;
@@ -27,80 +33,110 @@
       .animate-pop {
         animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
       }
+      .board-grid {
+        display: grid;
+        box-sizing: border-box;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .board-cell {
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        line-height: 1;
+      }
     </style>
   </head>
   <body
-    class="bg-gray-900 text-white min-h-[100dvh] flex flex-col justify-between p-3 select-none overflow-y-auto"
+    class="bg-gray-900 text-white h-[100dvh] max-h-[100dvh] flex flex-col p-2 md:p-3 select-none overflow-hidden"
   >
-    <!-- HEADER / ĐIỀU KHIỂN -->
-    <div class="w-full max-w-md mx-auto flex-shrink-0">
-      <!-- BẢNG THÔNG TIN: Thời gian, Kỷ lục, Số cần tìm -->
-      <div
-        class="grid grid-cols-3 gap-2 bg-gray-800 p-2.5 rounded-2xl shadow-lg mb-2 text-center"
+    <!-- HEADER GỌN: quay lại + số cần tìm + thời gian + best -->
+    <header
+      class="w-full max-w-6xl mx-auto flex items-center gap-2 flex-shrink-0 mb-1.5"
+    >
+      <a
+        href="index.html"
+        aria-label="Về trang chủ"
+        class="inline-flex items-center justify-center w-9 h-9 bg-gray-800 hover:bg-gray-700 active:scale-95 border border-gray-700 rounded-xl text-lg font-bold text-white shadow flex-shrink-0"
       >
-        <div>
-          <span class="text-gray-400 text-[10px] block">Cần tìm</span>
-          <span id="target-display" class="text-xl font-bold text-yellow-400"
+        ←
+      </a>
+
+      <div
+        class="flex-1 min-w-0 flex items-center justify-between gap-2 bg-gray-800/80 border border-gray-700 rounded-xl px-2.5 py-1.5"
+      >
+        <div class="flex items-baseline gap-1.5 min-w-0">
+          <span class="text-gray-500 text-[10px] uppercase tracking-wide"
+            >Tìm</span
+          >
+          <span
+            id="target-display"
+            class="text-lg md:text-xl font-black text-yellow-400 leading-none"
             >1</span
           >
         </div>
-        <div>
-          <span class="text-gray-400 text-[10px] block">Thời gian</span>
-          <span id="timer-display" class="text-lg font-mono text-green-400"
+
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-gray-500 text-[10px] uppercase tracking-wide"
+            >Time</span
+          >
+          <span
+            id="timer-display"
+            class="text-base md:text-lg font-mono font-bold text-green-400 leading-none tabular-nums"
             >0.00s</span
           >
         </div>
-        <div>
-          <span class="text-gray-400 text-[10px] block">Kỷ lục (Best)</span>
-          <span id="highscore-display" class="text-lg font-mono text-purple-400"
+
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-gray-500 text-[10px] uppercase tracking-wide"
+            >Best</span
+          >
+          <span
+            id="highscore-display"
+            class="text-sm md:text-base font-mono font-bold text-purple-400 leading-none tabular-nums"
             >--</span
           >
         </div>
       </div>
+    </header>
 
-      <!-- Ô NHẬP SỐ HÀNG N (MAX = 10) & NÚT BẮT ĐẦU -->
-      <div
-        class="bg-gray-800 p-2.5 rounded-2xl shadow-lg flex items-center gap-2"
-      >
-        <div class="flex-1">
-          <label class="block text-gray-400 text-[10px] font-semibold mb-1"
-            >NHẬP SỐ HÀNG N (Từ 3 đến 10):</label
-          >
-          <input
-            type="number"
-            id="grid-n-input"
-            min="3"
-            max="10"
-            value="10"
-            oninput="updateHighScoreDisplay()"
-            class="w-full bg-gray-700 text-white px-3 py-1.5 rounded-xl text-sm font-bold border border-gray-600 focus:outline-none focus:border-blue-500"
-          />
-        </div>
-        <button
-          onclick="initSquareGridGame()"
-          class="bg-gradient-to-r from-purple-600 to-pink-600 active:scale-95 transition-transform px-4 py-2.5 rounded-xl font-bold text-xs shadow text-white mt-4"
-        >
-          Chơi Ngay
-        </button>
-      </div>
-    </div>
-
-    <!-- KHUNG CHƠI GAME CHÍNH -->
+    <!-- KHUNG CHƠI (chiếm phần lớn màn hình) -->
     <div
-      class="w-full max-w-md mx-auto flex-1 flex items-center justify-center relative overflow-hidden bg-gray-950 rounded-3xl border border-gray-800 p-3 my-2"
+      class="board-stage w-full max-w-6xl mx-auto flex-1 min-h-0 flex items-center justify-center relative overflow-hidden bg-gray-950 rounded-2xl border border-gray-800 p-1.5 md:p-3"
     >
       <div
         id="game-container"
-        class="w-full h-full flex items-center justify-center"
+        class="w-full h-full min-h-0 min-w-0 flex items-center justify-center overflow-hidden"
       ></div>
     </div>
 
-    <!-- FOOTER -->
-    <div
-      class="w-full max-w-md mx-auto text-center text-gray-500 text-[11px] flex-shrink-0"
+    <!-- THANH SETUP NHỎ Ở DƯỚI -->
+    <footer
+      class="w-full max-w-6xl mx-auto flex-shrink-0 mt-1.5 flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-xl px-2.5 py-1.5"
     >
-      Chế độ Lưới Vuông • Highscore lưu riêng theo đúng input N x N
-    </div>
+      <label class="text-gray-400 text-[11px] font-semibold flex-shrink-0"
+        >N</label
+      >
+      <input
+        type="number"
+        id="grid-n-input"
+        min="3"
+        max="10"
+        value="10"
+        oninput="updateHighScoreDisplay()"
+        class="w-14 bg-gray-700 text-white text-center px-1 py-1 rounded-lg text-sm font-bold border border-gray-600 focus:outline-none focus:border-blue-500"
+      />
+      <span class="text-gray-600 text-[10px] hidden sm:inline"
+        >3–10</span
+      >
+      <div class="flex-1"></div>
+      <button
+        onclick="initSquareGridGame()"
+        class="bg-gradient-to-r from-purple-600 to-pink-600 active:scale-95 transition-transform px-3.5 py-1.5 rounded-lg font-bold text-xs text-white shadow"
+      >
+        Chơi
+      </button>
+    </footer>
 
     <script>
       let currentTarget = 1;
@@ -172,6 +208,36 @@
         }, 50);
       }
 
+      function fitBoardGrid(grid) {
+        const container = document.getElementById("game-container");
+        if (!grid || !container) return;
+
+        const gap = N >= 9 ? 2 : N >= 7 ? 3 : 4;
+        const pad = 2;
+        const size = Math.max(
+          0,
+          Math.floor(
+            Math.min(container.clientWidth, container.clientHeight) - pad * 2,
+          ),
+        );
+
+        grid.style.width = size + "px";
+        grid.style.height = size + "px";
+        grid.style.gap = gap + "px";
+        grid.style.padding = "0";
+        grid.style.gridTemplateColumns = `repeat(${N}, minmax(0, 1fr))`;
+        grid.style.gridTemplateRows = `repeat(${N}, minmax(0, 1fr))`;
+
+        const cell = (size - gap * (N - 1)) / N;
+        const fontSize = Math.max(8, Math.min(34, cell * 0.4));
+        const radius = Math.max(4, Math.min(10, cell * 0.12));
+
+        grid.querySelectorAll(".board-cell").forEach((el) => {
+          el.style.fontSize = fontSize + "px";
+          el.style.borderRadius = radius + "px";
+        });
+      }
+
       function renderSquareBoard() {
         const container = document.getElementById("game-container");
         container.innerHTML = "";
@@ -185,23 +251,21 @@
         }
 
         const gridWrapper = document.createElement("div");
-        gridWrapper.className =
-          "w-full h-full grid gap-1 p-1 items-center justify-center aspect-square max-w-[450px] max-h-[450px]";
-        gridWrapper.style.gridTemplateColumns = `repeat(${N}, minmax(0, 1fr))`;
-        gridWrapper.style.gridTemplateRows = `repeat(${N}, minmax(0, 1fr))`;
+        gridWrapper.id = "board-grid";
+        gridWrapper.className = "board-grid";
 
         numbers.forEach((num) => {
           const item = document.createElement("div");
-          let textSize = N > 8 ? "text-xs" : "text-sm";
-
-          item.className = `w-full h-full bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center font-bold ${textSize} text-yellow-300 shadow cursor-pointer active:scale-95 transition-all animate-pop aspect-square`;
+          item.className =
+            "board-cell w-full h-full bg-gray-800 border border-gray-700 flex items-center justify-center font-bold text-yellow-300 shadow cursor-pointer active:scale-95 transition-colors animate-pop";
           item.innerText = num;
-
           item.addEventListener("click", () => handleSquareClick(item, num));
           gridWrapper.appendChild(item);
         });
 
         container.appendChild(gridWrapper);
+        fitBoardGrid(gridWrapper);
+        requestAnimationFrame(() => fitBoardGrid(gridWrapper));
       }
 
       function handleSquareClick(item, num) {
@@ -212,7 +276,9 @@
         }
 
         if (num === currentTarget) {
-          item.className = `w-full h-full bg-gray-800/40 border border-gray-700/30 rounded-lg flex items-center justify-center font-bold text-xs text-yellow-500/40 opacity-30 transition-all pointer-events-none aspect-square`;
+          item.className =
+            "board-cell w-full h-full bg-gray-800/40 border border-gray-700/30 flex items-center justify-center font-bold text-yellow-500/40 opacity-30 transition-colors pointer-events-none";
+          fitBoardGrid(document.getElementById("board-grid"));
 
           currentTarget++;
 
@@ -254,6 +320,10 @@
           }, 200);
         }
       }
+
+      window.addEventListener("resize", () => {
+        fitBoardGrid(document.getElementById("board-grid"));
+      });
 
       window.onload = () => {
         updateHighScoreDisplay();
